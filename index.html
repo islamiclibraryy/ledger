@@ -2,538 +2,1301 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Deep Link Shortener Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0F172A">
+    <title>Ledger by Shekh</title>
+
+    <!-- Suppress Tailwind CDN Production Warning -->
+    <script>
+        const origWarn = console.warn;
+        console.warn = (...args) => {
+            if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
+            origWarn(...args);
+        };
+    </script>
+
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./icon-192.webp">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Ledger">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
-    <!-- Font Awesome CDN -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js & HTML2PDF -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'] },
+                    colors: {
+                        app: { bg: '#F4F6F9', card: '#FFFFFF', text: '#0F172A', muted: '#64748B', primary: '#3B82F6' }
+                    },
+                    boxShadow: {
+                        'card': '0 12px 30px -10px rgba(0,0,0,0.06)',
+                        'fab': '0 14px 28px -8px rgba(59, 130, 246, 0.65)',
+                        'device': '0 0 0 14px #0F172A, 0 30px 60px -15px rgba(0,0,0,0.6)',
+                        'nav': '0 20px 40px -10px rgba(0,0,0,0.1), 0 0 0 1px rgba(255,255,255,0.6) inset',
+                        'modal': '0 25px 50px -12px rgba(0,0,0,0.25)'
+                    },
+                }
+            }
+        }
+    </script>
 
     <style>
-        /* --- Core Styles & Theme --- */
-        :root {
-            --bg-color: #0d0d1a;
-            --card-bg: rgba(30, 30, 50, 0.5);
-            --border-color: rgba(255, 255, 255, 0.15);
-            --glow-color: rgba(120, 80, 255, 0.3);
-            --primary-text: #f0f0f5;
-            --secondary-text: #a0a0b0;
-            --input-bg: rgba(0, 0, 0, 0.2);
-            --gradient-start: #8e2de2;
-            --gradient-end: #4a00e0;
-            --radius: 20px;
-            --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
-
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
         html, body {
-            height: 100%;
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background-color: #F4F6F9;
+            display: flex; justify-content: center; align-items: center;
+            font-family: 'Inter', sans-serif;
+            -webkit-user-select: none; user-select: none; 
+            overscroll-behavior: none; 
+            overflow: hidden;
         }
 
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: var(--bg-color);
-            background-image: radial-gradient(circle at 10% 10%, rgba(120, 80, 255, 0.2) 0%, transparent 50%),
-                              radial-gradient(circle at 90% 80%, rgba(80, 200, 255, 0.15) 0%, transparent 50%);
-            color: var(--primary-text);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            overflow-x: hidden;
-        }
+        input, textarea { -webkit-user-select: text; user-select: text; }
 
-        /* --- Main App Container --- */
-        .app-container {
-            width: 100%;
-            max-width: 420px;
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-        }
-
-        /* --- Glassmorphism Card Style --- */
-        .card {
-            background: var(--card-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-radius: var(--radius);
-            border: 1px solid var(--border-color);
-            padding: 25px;
-            box-shadow: var(--shadow);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            transform: scale(0.95);
-            opacity: 0;
-            animation: fadeInScale 0.5s ease-out forwards;
+        #app-frame {
+            width: 100%; max-width: 430px; height: 100dvh; max-height: 932px;
+            background-color: #F4F6F9; position: relative; overflow: hidden;
+            display: flex; flex-direction: column;
         }
         
-        .card.result-card {
-            display: none; /* Hidden by default */
+        @media (min-width: 500px) {
+            #app-frame { height: 90vh; border-radius: 40px; box-shadow: theme('boxShadow.device'); }
         }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Premium Dark Hero Card */
+        .hero-card {
+            background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+            position: relative; overflow: hidden;
+        }
+        .glow-orb {
+            position: absolute; width: 250px; height: 250px; border-radius: 50%;
+            filter: blur(60px); opacity: 0.4; pointer-events: none;
+        }
+        .glow-healthy { background: #10B981; top: -50px; right: -50px; }
+        .glow-warning { background: #F59E0B; top: -50px; right: -50px; }
+        .glow-critical { background: #E11D48; top: -50px; right: -50px; }
+
+        /* View Transitions */
+        .view-section {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            overflow-y: auto; padding-bottom: 120px;
+            opacity: 0; pointer-events: none; transform: translateY(10px);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            overscroll-behavior-y: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+        .view-section.active { opacity: 1; pointer-events: auto; transform: translateY(0); z-index: 10; }
+
+        /* Navigation */
+        .floating-nav {
+            position: absolute; bottom: 32px; left: 24px; right: 24px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            border-radius: 100px; box-shadow: theme('boxShadow.nav');
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 16px; z-index: 50;
+        }
+        .nav-item {
+            display: flex; align-items: center; justify-content: center;
+            color: #94A3B8; font-size: 24px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative; height: 48px; width: 48px; border-radius: 16px;
+        }
+        .nav-item.active { color: #3B82F6; background: rgba(59, 130, 246, 0.12); transform: scale(1.05); }
+
+        .fab-container { position: relative; width: 64px; height: 60px; display: flex; justify-content: center;}
+        .nav-fab {
+            position: absolute; top: -24px; width: 60px; height: 60px; border-radius: 50%;
+            background: linear-gradient(135deg, #3B82F6 0%, #4F46E5 100%);
+            color: white; display: flex; align-items: center; justify-content: center;
+            font-size: 28px; box-shadow: theme('boxShadow.fab'); transition: transform 0.2s; z-index: 51;
+        }
+        .nav-fab:active { transform: scale(0.9); }
+
+        /* Inputs */
+        .fintech-input {
+            width: 100%; border: none; outline: none; background: transparent;
+            font-size: 48px; font-weight: 800; text-align: center; color: #0F172A;
+            letter-spacing: -2px; padding: 20px 0;
+        }
+        .fintech-input::placeholder { color: #CBD5E1; }
+        .native-field {
+            width: 100%; background: #F8FAFC; border: 1px solid #E2E8F0;
+            border-radius: 16px; padding: 16px; font-size: 16px; font-weight: 600;
+            color: #0F172A; outline: none; transition: all 0.2s;
+        }
+        .native-field:focus { border-color: #3B82F6; background: #FFFFFF; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+
+        /* Splash & Onboarding */
+        #splash-screen {
+            position: absolute; inset: 0; background: #0F172A; z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.6s ease-out;
+        }
+        .splash-logo { animation: floatLogo 3s ease-in-out infinite; }
+        @keyframes floatLogo { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         
-        @keyframes fadeInScale {
-            to {
-                transform: scale(1);
-                opacity: 1;
-            }
+        #onboarding-screen, #main-app {
+            opacity: 0; pointer-events: none; transition: opacity 0.5s ease-out;
+            position: absolute; inset: 0;
         }
+        #onboarding-screen.active, #main-app.active { opacity: 1; pointer-events: auto; }
 
-        /* --- Header --- */
-        .card-header {
-            text-align: center;
-            margin-bottom: 25px;
+        /* Modals & Bottom Sheets */
+        .bottom-sheet {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            background: #FFFFFF; border-radius: 32px 32px 0 0;
+            padding: 24px; padding-bottom: 40px; box-shadow: 0 -20px 40px rgba(0,0,0,0.1);
+            transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 1000; display: flex; flex-direction: column; max-height: 90%; overflow-y: auto;
+            overscroll-behavior-y: contain;
         }
-        .card-header h1 {
-            font-size: 1.8rem;
-            font-weight: 500;
-            background: linear-gradient(90deg, #c5a6ff, #99c3ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .bottom-sheet.open { transform: translateY(0); }
+        
+        .confirm-modal {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -40%);
+            width: 85%; max-width: 320px; background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px); border-radius: 24px; padding: 24px;
+            box-shadow: theme('boxShadow.modal'); z-index: 2000; text-align: center;
+            opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .card-header p {
-            font-size: 0.9rem;
-            color: var(--secondary-text);
-            margin-top: 5px;
-        }
+        .confirm-modal.open { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%); }
 
-        /* --- Modern Floating Input Fields --- */
-        .input-group {
-            position: relative;
-            margin-bottom: 20px;
+        .sheet-overlay {
+            position: absolute; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+            opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 999;
         }
-        .input-field {
-            width: 100%;
-            background: var(--input-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 15px 20px;
-            font-size: 1rem;
-            color: var(--primary-text);
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-        .input-field::placeholder {
-            color: transparent;
-        }
-        .input-label {
-            position: absolute;
-            left: 20px;
-            top: 15px;
-            color: var(--secondary-text);
-            pointer-events: none;
-            transition: all 0.2s ease;
-        }
-        .input-field:focus,
-        .input-field:not(:placeholder-shown) {
-            outline: none;
-            border-color: var(--gradient-start);
-            box-shadow: 0 0 0 3px var(--glow-color);
-        }
-        .input-field:focus + .input-label,
-        .input-field:not(:placeholder-shown) + .input-label {
-            top: -10px;
-            left: 15px;
-            font-size: 0.75rem;
-            padding: 0 5px;
-            background: #1e1e32;
-            color: var(--gradient-start);
-        }
+        .sheet-overlay.open { opacity: 1; pointer-events: auto; }
 
-        /* --- Advanced Options --- */
-        .advanced-toggle {
-            color: var(--secondary-text);
-            cursor: pointer;
-            text-align: center;
-            font-size: 0.9rem;
-            margin-bottom: 20px;
-            user-select: none;
-        }
-        .advanced-toggle i {
-            transition: transform 0.3s ease;
-        }
-        .advanced-options {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.5s ease-out;
-        }
-        .advanced-options.show {
-            max-height: 500px;
-        }
-
-        /* --- Button --- */
-        .btn {
-            position: relative;
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 12px;
-            background-image: linear-gradient(45deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
-            color: white;
-            font-size: 1rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            overflow: hidden;
-            user-select: none;
-        }
-        .btn:hover {
-            box-shadow: 0 5px 15px var(--glow-color);
-        }
-        .btn:active {
-            transform: scale(0.97);
-        }
-
-        /* Ripple effect for buttons */
-        .ripple {
-            position: absolute;
-            border-radius: 50%;
-            transform: scale(0);
-            animation: ripple-animation 0.6s linear;
-            background-color: rgba(255, 255, 255, 0.7);
-        }
-        @keyframes ripple-animation {
-            to {
-                transform: scale(4);
-                opacity: 0;
-            }
-        }
-
-        /* --- Result Card --- */
-        .result-box {
-            background: var(--input-bg);
-            padding: 15px;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            margin-bottom: 20px;
-            text-align: center;
-            word-wrap: break-word;
-        }
-        #short-link {
-            font-size: 1.1rem;
-            color: #aae2ff;
-            font-weight: 500;
-        }
-        .result-actions {
-            display: flex;
-            gap: 15px;
-            margin-top: 15px;
-        }
-        .action-btn {
-            flex-grow: 1;
-            padding: 10px;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--border-color);
-            color: var(--primary-text);
-            font-size: 0.9rem;
-        }
-
-        /* --- QR Code --- */
-        .qr-code-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 20px;
-            padding: 15px;
-            background: white;
-            border-radius: 12px;
-        }
-        #qrcode canvas {
-            max-width: 100%;
-            height: auto;
-        }
-
-        /* --- Loader & Toasts --- */
-        .loader {
-            display: none;
-            border: 4px solid rgba(255, 255, 255, 0.2);
-            border-left-color: var(--gradient-start);
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto 0;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        .toast {
-            position: fixed;
-            bottom: -100px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 12px 20px;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            color: white;
-            box-shadow: var(--shadow);
-            transition: bottom 0.5s ease;
-            z-index: 1000;
-        }
-        .toast.show {
-            bottom: 30px;
-        }
-        .toast.success { background-color: #28a745; }
-        .toast.error { background-color: #dc3545; }
-
+        /* Abstract Illustration Shapes */
+        .onb-shape-1 { background: linear-gradient(135deg, #3B82F6, #8B5CF6); border-radius: 40px 100px 100px 40px; }
+        .onb-shape-2 { background: linear-gradient(135deg, #10B981, #3B82F6); border-radius: 100px; }
+        .onb-shape-3 { background: linear-gradient(135deg, #F59E0B, #EF4444); border-radius: 40px; transform: rotate(15deg); }
     </style>
 </head>
 <body>
 
-    <main class="app-container">
-        <!-- Main Form Card -->
-        <div class="card" id="form-card">
-            <div class="card-header">
-                <h1>Link Shortener Pro</h1>
-                <p>Create smart, deep-linked URLs</p>
+<div id="app-frame">
+
+    <!-- SPLASH SCREEN -->
+    <div id="splash-screen" class="bg-gradient-to-br from-slate-900 via-[#0a1120] to-slate-900">
+        <div class="splash-logo mb-8 relative z-10">
+            <div class="w-28 h-28 bg-gradient-to-tr from-blue-600 via-indigo-600 to-emerald-400 rounded-[32px] shadow-[0_20px_50px_-12px_rgba(59,130,246,0.5)] flex items-center justify-center rotate-3 border border-white/20 backdrop-blur-xl">
+                <i class="ph-fill ph-wallet text-6xl text-white drop-shadow-md"></i>
             </div>
-            <form id="shorten-form">
-                <div class="input-group">
-                    <input type="url" id="default-url" class="input-field" placeholder="Default URL" required>
-                    <label for="default-url" class="input-label">Default URL (e.g., https://...)</label>
-                </div>
-
-                <div class="advanced-toggle" id="advanced-toggle">
-                    Advanced Options <i class="fas fa-chevron-down"></i>
-                </div>
-
-                <div class="advanced-options" id="advanced-options">
-                    <div class="input-group">
-                        <input type="text" id="android-url" class="input-field" placeholder="Android Intent URL">
-                        <label for="android-url" class="input-label">Android Intent URL (Optional)</label>
-                    </div>
-                    <div class="input-group">
-                        <input type="text" id="ios-url" class="input-field" placeholder="iOS URL Scheme">
-                        <label for="ios-url" class="input-label">iOS URL Scheme (Optional)</label>
-                    </div>
-                    <div class="input-group">
-                        <input type="text" id="custom-alias" class="input-field" placeholder="Custom Alias">
-                        <label for="custom-alias" class="input-label">Custom Alias (Optional)</label>
-                    </div>
-                     <div class="input-group">
-                        <select id="expiry-time" class="input-field">
-                            <option value="">Never Expire</option>
-                            <option value="5m">5 Minutes</option>
-                            <option value="1h">1 Hour</option>
-                            <option value="1d">1 Day</option>
-                            <option value="7d">7 Days</option>
-                            <option value="30d">30 Days</option>
-                        </select>
-                         <label for="expiry-time" class="input-label" style="top: -10px; left: 15px; font-size: 0.75rem; padding: 0 5px; background: #1e1e32;">Link Expiry</label>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn" id="submit-btn">
-                    <span class="btn-text">Shorten Link</span>
-                </button>
-                <div class="loader" id="loader"></div>
-            </form>
+            <div class="absolute inset-0 bg-blue-500/40 blur-3xl rounded-full scale-150"></div>
         </div>
+        <h1 class="text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 text-5xl font-black tracking-tight mb-3 z-10">Ledger</h1>
+        <p class="text-blue-400 text-[10px] font-black tracking-[0.3em] uppercase z-10">Your Premium Vault</p>
+    </div>
 
-        <!-- Result Card -->
-        <div class="card result-card" id="result-card">
-            <div class="card-header">
-                <h1>Link Created!</h1>
-            </div>
-            <div class="result-box">
-                <span id="short-link"></span>
-            </div>
-            <div class="result-actions">
-                <button class="btn action-btn" id="copy-btn"><i class="fas fa-copy"></i> Copy</button>
-                <button class="btn action-btn" id="share-btn"><i class="fas fa-share-alt"></i> Share</button>
-            </div>
-            <div class="qr-code-container">
-                <div id="qrcode"></div>
-            </div>
-        </div>
-    </main>
-
-    <div class="toast" id="toast"></div>
-    
-    <!-- Pure JS QR Code Generator -->
-    <script>
-    /*
-     * QRCode.js
-     * Copyright (c) 2012-2016 davidshimjs
-     * Licensed under the MIT license
-     */
-    var QRCode;!function(){function r(t){this.mode=s.MODE_8BIT_BYTE,this.data=t,this.parsedData=[];for(var e=0,r=this.data.length;e<r;e++){var i=this.data.charCodeAt(e);i>65536?(this.parsedData.push(240|i>>18&7),this.parsedData.push(128|i>>12&63),this.parsedData.push(128|i>>6&63),this.parsedData.push(128|63&i)):i>2048?(this.parsedData.push(224|i>>12&15),this.parsedData.push(128|i>>6&63),this.parsedData.push(128|63&i)):i>128?(this.parsedData.push(192|i>>6&31),this.parsedData.push(128|63&i)):this.parsedData.push(i)}this.parsedData=this.parsedData.concat(function(t){for(var e=[],r=0;r<8*t.length;r++){var i=r/8|0,n=r%8,a=7-n,o=t[i]>>>a&1;e.push(o)}for(var s=[],h=0;h<e.length;h+=8)s.push(function(t){for(var e=0,r=0;r<8;r++)e+=t[r]<<7-r;return e}(e.slice(h,h+8)));return s}(this.parsedData)),this.parsedData.length>7089&&this.parsedData.length,this.parsedData.length}function i(t,e){this.typeNumber=t,this.errorCorrectLevel=e,this.modules=null,this.moduleCount=0,this.dataCache=null,this.dataList=[]}function h(t,e){if(void 0==t.length)throw new Error(t.length+"/"+e);for(var r=0;r<t.length&&0==t[r];)r++;this.num=new Array(t.length-r+e);for(var i=0;i<t.length-r;i++)this.num[i]=t[i+r]}function a(t,e){this.genPoly=t,this.degree=t.degree(),this.coeffs=e.num.slice()}function n(t){this.buffer=new Array,this.length=0,this.push(t)}function o(t,e){this.rsBlock=t,this.dataCodewords=e,this.errorCodewords=new Array(t.ecCodewordsPerBlock);for(var r=new h(this.dataCodewords,this.errorCodewords.length),i=new a(new h(function(t){for(var e=[1],r=0;r<t;r++){e.push(1);for(var i=e.length-2;i>0;i--)e[i]=e[i-1]^l.gexp(l.glog(e[i])+r)}return e}(t),0),r.getAt(0)),s=0;s<this.errorCodewords.length;s++)this.errorCodewords[s]=0;for(s=0;s<this.dataCodewords.length;s++){var n=i.coeffs[0]^this.dataCodewords[s];i.shiftLeft(1);for(var o=0;o<i.degree();o++)i.coeffs[o]^=l.gexp(l.glog(i.genPoly.getAt(o))+l.glog(n))}for(s=0;s<this.errorCodewords.length;s++)this.errorCodewords[s]=i.coeffs[s]}function l(){for(this.EXP_TABLE=new Array(256),this.LOG_TABLE=new Array(256),i=0;i<8;i++)this.EXP_TABLE[i]=1<<i;for(var i=8;i<256;i++)this.EXP_TABLE[i]=this.EXP_TABLE[i-4]^this.EXP_TABLE[i-5]^this.EXP_TABLE[i-6]^this.EXP_TABLE[i-8];for(i=0;i<255;i++)this.LOG_TABLE[this.EXP_TABLE[i]]=i}function e(t,e,r,i,n){for(var a=[[]],o=t.moduleCount,s=0;s<o;s++){a[s]=[];for(var h=0;h<o;h++)a[s][h]=null}return function(t,e){for(var r=-1,i=-1,n=-1,a=-1,o=0;o<e.length;o++){var s=e[o][0],h=e[o][1];s<r||r==-1?r=s:s>n||n==-1?n=s:s,h<i||i==-1?i=h:h>a||a==-1?a=h:h}return Math.abs(n-r)-Math.abs(a-i)}(function t(e,r,i){for(var n=0,a=0,o=0,s=new Array(e.length),h=0;h<e.length;h++)s[h]=e[h].slice();if(r==d.HORIZONTAL){for(a=0;a<i;a++)for(n=0;n<e.length;n++)if(s[n][a])return;for(a=0;a<i;a++)for(n=0;n<e.length;n++)s[n][a]=!0}else if(r==d.VERTICAL){for(n=0;n<e.length;n++)for(a=0;a<i;a++)if(s[n][a])return;for(n=0;n<e.length;n++)for(a=0;a<i;a++)s[n][a]=!0}for(n=0;n<e.length;n++){var l=0;for(a=0;a<i;a++)e[n][a]&&(l++);l>5&&(o+=3+l-5)}for(a=0;a<i;a++){l=0;for(n=0;n<e.length;n++)e[n][a]&&(l++);l>5&&(o+=3+l-5)}for(n=0;n<e.length-1;n++)for(a=0;a<i-1;a++){var c=0;e[n][a]&&c++,e[n+1][a]&&c++,e[n][a+1]&&c++,e[n+1][a+1]&&c++,3!=c&&4!=c||(o+=3)}return o}(e,r,i)+function(t,e,r){var i,n,a=0,o=0,s=0;for(n=0;n<r;n++)for(i=0;i<t.length;i++)t[i][n]&&(o++);for(i=0;i<t.length;i++)for(n=0;n<r;n++)t[i][n]&&(s++);return Math.abs(100*o/s/t.length-50)/5*10}(e,0,i),e=a,t=r,i=n,o=0,s=[],function(t,e){for(var r=0;r<e;r++)for(var i=0;i<e;i++)s.push([i,r])}(0,n),h=[],function(t,e){var r=function(){var t=Math.floor(Math.random()*s.length);return h.push(s[t]),s.splice(t,1),h}();if(r){var i=r[0],n=r[1];t[i][n]=!0}}(a,i))}var u,g,c,d={PATTERN_POSITION_TABLE:[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],G15:1335,G18:7973,G15_MASK:21522,getBCHTypeInfo:function(t){for(var e=t<<10;d.getBCHDigit(e)-d.getBCHDigit(d.G15)>=0;)e^=d.G15<<d.getBCHDigit(e)-d.getBCHDigit(d.G15);return(t<<10|e)^d.G15_MASK},getBCHTypeNumber:function(t){for(var e=t<<12;d.getBCHDigit(e)-d.getBCHDigit(d.G18)>=0;)e^=d.G18<<d.getBCHDigit(e)-d.getBCHDigit(d.G18);return t<<12|e},getBCHDigit:function(t){for(var e=0;0!=t;)e++,t>>=1;return e},getPatternPosition:function(t){return d.PATTERN_POSITION_TABLE[t-1]},getMask:function(t,e,r){switch(t){case f.PATTERN000:return(e+r)%2==0;case f.PATTERN001:return e%2==0;case f.PATTERN010:return r%3==0;case f.PATTERN011:return(e+r)%3==0;case f.PATTERN100:return(Math.floor(e/2)+Math.floor(r/3))%2==0;case f.PATTERN101:return e*r%2+e*r%3==0;case f.PATTERN110:return(e*r%2+e*r%3)%2==0;case f.PATTERN111:return(e*r%3+(e+r)%2)%2==0;default:throw new Error("bad maskPattern:"+t)}},getErrorCorrectPolynomial:function(t){for(var e=new h([1],0),r=0;r<t;r++)e=e.multiply(new h([1,l.gexp(r)],0));return e},getLengthInBits:function(t,e){if(1<=e&&e<10)switch(t){case s.MODE_NUMBER:return 10;case s.MODE_ALPHA_NUM:return 9;case s.MODE_8BIT_BYTE:return 8;case s.MODE_KANJI:return 8;default:throw new Error("mode:"+t)}else if(e<27)switch(t){case s.MODE_NUMBER:return 12;case s.MODE_ALPHA_NUM:return 11;case s.MODE_8BIT_BYTE:return 16;case s.MODE_KANJI:return 10;default:throw new Error("mode:"+t)}else{if(!(e<41))throw new Error("type:"+e);switch(t){case s.MODE_NUMBER:return 14;case s.MODE_ALPHA_NUM:return 13;case s.MODE_8BIT_BYTE:return 16;case s.MODE_KANJI:return 12;default:throw new Error("mode:"+t)}}},getLostPoint:function(t){for(var e=t.moduleCount,r=0,i=0;i<e;i++)for(var n=0;n<e;n++){for(var a=0,o=t.isDark(i,n),s= -1;s<=1;s++)if(!(i+s<0||e<=i+s))for(var h= -1;h<=1;h++)n+h<0||e<=n+h||0==s&&0==h||o==t.isDark(i+s,n+h)&&a++;a>5&&(r+=3+a-5)}for(i=0;i<e-1;i++)for(n=0;n<e-1;n++){var l=0;t.isDark(i,n)&&l++,t.isDark(i+1,n)&&l++,t.isDark(i,n+1)&&l++,t.isDark(i+1,n+1)&&l++,3!=l&&4!=l||(r+=3)}for(i=0;i<e;i++)for(n=0;n<e-6;n++)t.isDark(i,n)&&!t.isDark(i,n+1)&&t.isDark(i,n+2)&&t.isDark(i,n+3)&&t.isDark(i,n+4)&&!t.isDark(i,n+5)&&t.isDark(i,n+6)&&(r+=40);for(n=0;n<e;n++)for(i=0;i<e-6;i++)t.isDark(i,n)&&!t.isDark(i+1,n)&&t.isDark(i+2,n)&&t.isDark(i+3,n)&&t.isDark(i+4,n)&&!t.isDark(i+5,n)&&t.isDark(i+6,n)&&(r+=40);for(var c=0,n=0;n<e;n++)for(i=0;i<e;i++)t.isDark(i,n)&&c++;return r+=10*(Math.abs(100*c/e/e-50)/5)}},s={MODE_NUMBER:1,MODE_ALPHA_NUM:2,MODE_8BIT_BYTE:4,MODE_KANJI:8},p={L:1,M:0,Q:3,H:2},f={PATTERN000:0,PATTERN001:1,PATTERN010:2,PATTERN011:3,PATTERN100:4,PATTERN101:5,PATTERN110:6,PATTERN111:7},m={RS_BLOCK_TABLE:[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107,2,134,108],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,1,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,127,101,7,128,102],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,16,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]]},getRSBlocks:function(t,e){var r=function(t,e){switch(e){case p.L:return m.RS_BLOCK_TABLE[4*(t-1)+0];case p.M:return m.RS_BLOCK_TABLE[4*(t-1)+1];case p.Q:return m.RS_BLOCK_TABLE[4*(t-1)+2];case p.H:return m.RS_BLOCK_TABLE[4*(t-1)+3];default:return}}(t,e);if(void 0==r)throw new Error("bad rs block @ typeNumber:"+t+"/errorCorrectLevel:"+e);for(var i=r.length/3,n=[],a=0;a<i;a++)for(var o=r[3*a+0],s=r[3*a+1],h=r[3*a+2],l=0;l<o;l++)n.push(new c(s,h));return n}};i.prototype={get:function(t){return Math.floor(t/8)},getModuleCount:function(){return this.moduleCount},make:function(){this.makeImpl(!1,this.getBestMaskPattern())},makeImpl:function(t,e){this.moduleCount=4*this.typeNumber+17,this.modules=new Array(this.moduleCount);for(var r=0;r<this.moduleCount;r++){this.modules[r]=new Array(this.moduleCount);for(var i=0;i<this.moduleCount;i++)this.modules[r][i]=null}this.setupPositionProbePattern(0,0),this.setupPositionProbePattern(this.moduleCount-7,0),this.setupPositionProbePattern(0,this.moduleCount-7),this.setupPositionAdjustPattern(),this.setupTimingPattern(),this.setupTypeInfo(t,e),this.typeNumber>=7&&this.setupTypeNumber(t),null==this.dataCache&&(this.dataCache=i.createData(this.typeNumber,this.errorCorrectLevel,this.dataList)),this.mapData(this.dataCache,e)},setupPositionProbePattern:function(t,e){for(var r=-1;r<=7;r++)if(!(t+r<=-1||this.moduleCount<=t+r))for(var i=-1;i<=7;i++)e+i<=-1||this.moduleCount<=e+i||(0<=r&&r<=6&&(0==i||6==i)||0<=i&&i<=6&&(0==r||6==r)||2<=r&&r<=4&&2<=i&&i<=4?this.modules[t+r][e+i]=!0:this.modules[t+r][e+i]=!1)},getBestMaskPattern:function(){for(var t=0,e=0,r=0;r<8;r++){this.makeImpl(!0,r);var i=d.getLostPoint(this);(0==r||t>i)&&(t=i,e=r)}return e},createMovieClip:function(t,e,r){var i=t.createEmptyMovieClip(e,r);this.make();for(var n=0;n<this.modules.length;n++)for(var a=1*n,o=0;o<this.modules[n].length;o++){var s=1*o,h=this.modules[n][o];h&&i.beginFill(0,100),i.moveTo(s,a),i.lineTo(s+1,a),i.lineTo(s+1,a+1),i.lineTo(s,a+1),i.endFill()}},setupTimingPattern:function(){for(var t=8;t<this.moduleCount-8;t++)null==this.modules[t][6]&&(this.modules[t][6]=t%2==0);for(var e=8;e<this.moduleCount-8;e++)null==this.modules[6][e]&&(this.modules[6][e]=e%2==0)},setupPositionAdjustPattern:function(){for(var t=d.getPatternPosition(this.typeNumber),e=0;e<t.length;e++)for(var r=0;r<t.length;r++){var i=t[e],n=t[r];if(null==this.modules[i][n])for(var a=-2;a<=2;a++)for(var o=-2;o<=2;o++)-2==a||2==a||-2==o||2==o||0==a&&0==o?this.modules[i+a][n+o]=!0:this.modules[i+a][n+o]=!1}},setupTypeNumber:function(t){for(var e=d.getBCHTypeNumber(this.typeNumber),r=0;r<18;r++){var i=!t&&1==(e>>r&1);this.modules[Math.floor(r/3)][r%3+this.moduleCount-8-3]=i}for(r=0;r<18;r++){i=!t&&1==(e>>r&1);this.modules[r%3+this.moduleCount-8-3][Math.floor(r/3)]=i}},setupTypeInfo:function(t,e){for(var r=this.errorCorrectLevel<<3|e,i=d.getBCHTypeInfo(r),n=0;n<15;n++){var a=!t&&1==(i>>n&1);n<6?this.modules[n][8]=a:n<8?this.modules[n+1][8]=a:this.modules[this.moduleCount-15+n][8]=a}for(n=0;n<15;n++){a=!t&&1==(i>>n&1);n<8?this.modules[8][this.moduleCount-n-1]=a:n<9?this.modules[8][15-n-1+1]=a:this.modules[8][15-n-1]=a}this.modules[this.moduleCount-8][8]=!t},mapData:function(t,e){for(var r=-1,i=this.moduleCount-1,n=7,a=0,o=this.moduleCount-1;o>0;o-=2)for(6==o&&o--;;){for(var s=0;s<2;s++)if(null==this.modules[i][o-s]){var h=!1;a<t.length&&(h=1==(t[a]>>>n&1));d.getMask(e,i,o-s)&&(h=!h),this.modules[i][o-s]=h,n--,n==-1&&(a++,n=7)}if((i+=r)<0||this.moduleCount<=i){i-=r,r=-r;break}}},isDark:function(t,e){return!(!this.modules[t]||void 0===this.modules[t][e])&&this.modules[t][e]},addData:function(t){var e=new r(t);this.dataList.push(e),this.dataCache=null}},i.createData=function(t,e,r){for(var i=m.getRSBlocks(t,e),n=new a,s=0;s<r.length;s++){var h=r[s];n.put(h.mode,4),n.put(h.getLength(),d.getLengthInBits(h.mode,t)),h.write(n)}for(var l=0,s=0;s<i.length;s++)l+=i[s].dataCount;if(n.getLengthInBits()>8*l)throw new Error("code length overflow. ("+n.getLengthInBits()+">"+8*l+")");for(n.getLengthInBits()+4<=8*l&&n.put(0,4);n.getLengthInBits()%8!=0;)n.putBit(!1);for(;!(n.getLengthInBits()>=8*l)&&(n.put(236,8),!(n.getLengthInBits()>=8*l));)n.put(17,8);return i.createBytes=function(t,r){for(var i=0,n=0,a=0,s=new Array(r.length),h=new Array(r.length),l=0;l<r.length;l++){var c=r[l].dataCount,e=r[l].totalCount-c;n=Math.max(n,c),a=Math.max(a,e),s[l]=new Array(c);for(var u=0;u<s[l].length;u++)s[l][u]=255&t.buffer[u+i];i+=c;var g=d.getErrorCorrectPolynomial(e),p=new o(s[l],g.getAt(g.getLength()-1)),f=d.getErrorCorrectPolynomial(e);p=new o(s[l],f.getAt(f.getLength()-1));var m=new o(s[l],d.getErrorCorrectPolynomial(e).getAt(d.getErrorCorrectPolynomial(e).getLength()-1));p=new h(s[l],m.getLength()-1);var v=new o(s[l],p.mod(d.getErrorCorrectPolynomial(e)).getAt(d.getErrorCorrectPolynomial(e).getLength()-1));h[l]=new Array(m.getLength()-1);for(u=0;u<h[l].length;u++){var w=u+v.getLength()-h[l].length;h[l][u]=w>=0?v.getAt(w):0}}var y=new Array(r[0].totalCount),B=0,u=0;for(u=0;u<n;u++)for(l=0;l<r.length;l++)u<s[l].length&&(y[B++]=s[l][u]);for(u=0;u<a;u++)for(l=0;l<r.length;l++)u<h[l].length&&(y[B++]=h[l][u]);return y}(n,i)},h.prototype={getAt:function(t){return this.num[t]},getLength:function(){return this.num.length},multiply:function(t){for(var e=new Array(this.getLength()+t.getLength()-1),r=0;r<this.getLength();r++)for(var i=0;i<t.getLength();i++)e[r+i]^=l.gexp(l.glog(this.getAt(r))+l.glog(t.getAt(i)));return new h(e,0)},mod:function(t){if(this.getLength()-t.getLength()<0)return this;for(var e=l.glog(this.getAt(0))-l.glog(t.getAt(0)),r=new Array(this.getLength()),i=0;i<this.getLength();i++)r[i]=this.getAt(i);for(i=0;i<t.getLength();i++)r[i]^=l.gexp(l.glog(t.getAt(i))+e);return new h(r,0).mod(t)}},a.prototype={get:function(t){var e=Math.floor(t/8);return 1==(this.buffer[e]>>>7-t%8&1)},put:function(t,e){for(var r=0;r<e;r++)this.putBit(1==(t>>>e-r-1&1))},getLengthInBits:function(){return this.length},putBit:function(t){var e=Math.floor(this.length/8);this.buffer.length<=e&&this.buffer.push(0),t&&(this.buffer[e]|=128>>>this.length%8),this.length++}},r.prototype.getLength=function(t){return this.parsedData.length},r.prototype.write=function(t){for(var e=0,r=this.parsedData.length;e<r;e++)t.put(this.parsedData[e],8)},l=new l,c.prototype={},u=function(t,e){var r,s,a,o,n,h,l,c=e.type,u="canvas"==c?function(){var t=document.createElement("canvas");t.width=r,t.height=s;var e=t.getContext("2d");return e.scale(h,l),e.fillStyle=a,e.fillRect(0,0,r,s),e.fillStyle=o,{element:t,context:e}}():function(){var t,e=document.createElement("div");e.style.position="relative",e.style.width=r+"px",e.style.height=s+"px";for(var i=0;i<n.length;i++)for(var h=0;h<n.length;h++)n[i][h]&&(t=document.createElement("div"),e.appendChild(t),t.style.position="absolute",t.style.backgroundColor=o,t.style.left=h*a+"px",t.style.top=i*l+"px",t.style.width=a+"px",t.style.height=l+"px");return{element:e}},g=function(){var t=new i(e.correctLevel,e.typeNumber);t.addData(e.text);var r=e.width,s=e.height;t.make();for(var i=t.getModuleCount(),a=e.width/i,o=e.height/i,h=Math.round(a),l=Math.round(o),n=[],c=0;c<i;c++)for(var u=0;u<i;u++)n.push(t.isDark(c,u));return{width:r,height:s,moduleSize:a,moduleCount:i,rows:[n]}};if("svg"==c){var p,f=e.width,m=e.height,d=e.colorDark,v=e.colorLight,g=e.title,w="<svg",y="</svg>",B=' width="'+f+'" height="'+m+'" viewBox="0 0 '+f+" "+m+'"';w+=B;var L='<title>'+g+"</title>";w+=L;var A='<rect width="'+f+'" height="'+m+'" fill="'+v+'"/>',E="",T=t.getModuleCount();for(row=0;row<T;row++)for(col=0;col<T;col++)if(t.isDark(row,col)){var N=col*f,C=row*m,I="M"+N+","+C+" L"+(N+f)+","+C+" L"+(N+f)+","+(C+m)+" L"+N+","+(C+m)+" Z";E+='<path d="'+I+'" fill="'+d+'"'+' stroke-width="0"'+"/>"}}return this.createImgTag()},QRCode=function(t,e){if(this.options="string"==typeof e?{text:e}:e,this.options.text){var r;if(void 0===this.options.width&&(this.options.width=256),void 0===this.options.height&&(this.options.height=256),void 0===this.options.typeNumber&&(this.options.typeNumber=4),void 0===this.options.colorDark&&(this.options.colorDark="#000000"),void 0===this.options.colorLight&&(this.options.colorLight="#ffffff"),void 0===this.options.correctLevel&&(this.options.correctLevel=p.H),this.options.useSVG||(this.options.drawer="canvas"),"string"==typeof t&&(t=document.getElementById(t)),!this.options.drawer||"canvas"==this.options.drawer&&!document.createElement("canvas").getContext){var n=document.createElement("IMG");return n.alt="Scan me!",t.appendChild(n),void(this.options.onRenderingEnd&&this.options.onRenderingEnd(this.options,!0))}r=new i(this.options.typeNumber,this.options.correctLevel),r.addData(this.options.text),r.make();for(var a=this.options.width/r.getModuleCount(),o=this.options.height/r.getModuleCount(),s=Math.round(a),h=Math.round(o),l=[],c=0;c<r.getModuleCount();c++)for(var u=0;u<r.getModuleCount();u++)l.push(r.isDark(c,u));var f,m,d=t,v=document.createElement("canvas");v.width=this.options.width,v.height=this.options.height;var g=v.getContext("2d");g.scale(s,h),g.fillStyle=this.options.colorDark,g.fillRect(0,0,this.options.width,this.options.height),g.fillStyle=this.options.colorLight;for(var w=0;w<r.getModuleCount();w++)for(var y=0;y<r.getModuleCount();y++)l[w*r.getModuleCount()+y]&&g.fillRect(y,w,1,1);t.appendChild(v),this.options.onRenderingEnd&&this.options.onRenderingEnd(this.options)}};for(var t in r)QRCode[t]=r[t];for(var t in i)QRCode[t]=i[t];for(var t in s)QRCode[t]=s[t];for(var t in p)QRCode[t]=p[t];for(var t in f)QRCode[t]=f[t];for(var t in d)QRCode[t]=d[t]}();
-    </script>
-    
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // --- CONFIGURATION ---
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyAlQ3OEOP4XeM0kQCqgObmvMFhJ-JY3UyqA-nslttEU1y7cy2N0I6MBA0BmSd-7nMS/exec'; // ⚠️ PASTE YOUR DEPLOYED WEB APP URL HERE
-
-        // --- DOM Element Selection ---
-        const form = document.getElementById('shorten-form');
-        const submitBtn = document.getElementById('submit-btn');
-        const btnText = submitBtn.querySelector('.btn-text');
-        const loader = document.getElementById('loader');
-        const resultCard = document.getElementById('result-card');
-        const shortLinkEl = document.getElementById('short-link');
-        const copyBtn = document.getElementById('copy-btn');
-        const shareBtn = document.getElementById('share-btn');
-        const qrcodeContainer = document.getElementById('qrcode');
-        const toast = document.getElementById('toast');
-        const advancedToggle = document.getElementById('advanced-toggle');
-        const advancedOptions = document.getElementById('advanced-options');
-
-        let qrcode = null;
-
-        // --- Event Listeners ---
-        form.addEventListener('submit', handleFormSubmit);
-        copyBtn.addEventListener('click', copyToClipboard);
-        shareBtn.addEventListener('click', shareLink);
-        advancedToggle.addEventListener('click', toggleAdvancedOptions);
-        
-        // Add ripple effect to all buttons with .btn class
-        document.querySelectorAll('.btn').forEach(button => {
-            button.addEventListener('click', createRipple);
-        });
-
-        // --- Functions ---
-        
-        async function handleFormSubmit(e) {
-            e.preventDefault();
+    <!-- ONBOARDING FLOW -->
+    <div id="onboarding-screen" class="bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] z-40 flex flex-col">
+        <div class="flex-grow relative overflow-hidden flex" id="onboarding-slides">
             
-            const defaultUrl = document.getElementById('default-url').value.trim();
-            if (!defaultUrl) {
-                showToast('Please enter a default URL.', 'error');
-                return;
+            <div class="w-full h-full flex-shrink-0 flex flex-col items-center justify-center px-8 transition-transform duration-500" style="transform: translateX(0%);">
+                <div class="relative w-64 h-64 mb-12 flex items-center justify-center">
+                    <div class="absolute w-56 h-56 bg-blue-500/30 blur-3xl rounded-full"></div>
+                    <div class="absolute w-48 h-48 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-[40px] flex items-center justify-center shadow-[0_20px_50px_-12px_rgba(59,130,246,0.5)] border border-white/10 backdrop-blur-xl rotate-3">
+                        <i class="ph-duotone ph-receipt text-6xl text-white"></i>
+                    </div>
+                </div>
+                <h2 class="text-3xl font-black text-white mb-4 tracking-tight text-center">Track Effortlessly</h2>
+                <p class="text-center text-slate-400 font-medium leading-relaxed">Log your daily expenses in seconds with our premium, intuitive interface.</p>
+            </div>
+
+            <div class="w-full h-full flex-shrink-0 flex flex-col items-center justify-center px-8 transition-transform duration-500" style="transform: translateX(0%);">
+                <div class="relative w-64 h-64 mb-12 flex items-center justify-center">
+                    <div class="absolute w-56 h-56 bg-emerald-500/30 blur-3xl rounded-full"></div>
+                    <div class="absolute w-48 h-48 bg-gradient-to-tr from-emerald-500 to-teal-500 rounded-[40px] flex items-center justify-center shadow-[0_20px_50px_-12px_rgba(16,185,129,0.5)] border border-white/10 backdrop-blur-xl -rotate-3">
+                        <i class="ph-duotone ph-chart-pie-slice text-6xl text-white"></i>
+                    </div>
+                </div>
+                <h2 class="text-3xl font-black text-white mb-4 tracking-tight text-center">Visual Insights</h2>
+                <p class="text-center text-slate-400 font-medium leading-relaxed">Understand exactly where your money goes with beautiful storytelling.</p>
+            </div>
+
+            <div class="w-full h-full flex-shrink-0 flex flex-col items-center justify-center px-8 transition-transform duration-500" style="transform: translateX(0%);">
+                <div class="relative w-64 h-64 mb-12 flex items-center justify-center">
+                    <div class="absolute w-56 h-56 bg-fuchsia-500/30 blur-3xl rounded-full"></div>
+                    <div class="absolute w-48 h-48 bg-gradient-to-tr from-fuchsia-600 to-purple-600 rounded-[40px] flex items-center justify-center shadow-[0_20px_50px_-12px_rgba(192,38,211,0.5)] border border-white/10 backdrop-blur-xl rotate-6">
+                        <i class="ph-duotone ph-target text-6xl text-white"></i>
+                    </div>
+                </div>
+                <h2 class="text-3xl font-black text-white mb-4 tracking-tight text-center">Purchase Planner</h2>
+                <p class="text-center text-slate-400 font-medium leading-relaxed">Set budgets, track planned purchases, and stay in total financial control.</p>
+            </div>
+        </div>
+        
+        <div class="px-8 pb-12 pt-4 relative z-10">
+            <div class="flex justify-center gap-3 mb-10" id="onboarding-dots">
+                <div class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-slate-700"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-slate-700"></div>
+            </div>
+            <button id="btn-next-onboard" class="w-full bg-white text-slate-900 font-black text-lg py-4 rounded-2xl shadow-[0_10px_30px_-10px_rgba(255,255,255,0.4)] active:scale-95 transition-transform">
+                Continue
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div id="main-app" class="flex flex-col">
+        
+        <!-- Header -->
+        <header class="w-full px-6 pt-6 pb-4 bg-app-bg shrink-0 flex justify-between items-center z-40">
+            <div>
+                <p class="text-[11px] font-bold text-app-muted uppercase tracking-widest mb-1">Ledger</p>
+                <h2 class="text-[24px] font-black text-app-text tracking-tight leading-none" id="header-title">Overview</h2>
+            </div>
+            <button onclick="Router.navigate('settings')" class="shrink-0 active:scale-95 transition-transform">
+                <img id="header-avatar" src="https://api.dicebear.com/7.x/notionists/svg?seed=Happy&backgroundColor=transparent&mood=happy" class="w-12 h-12 object-cover rounded-full border-2 border-white shadow-sm bg-blue-50" alt="Profile">
+            </button>
+        </header>
+
+        <!-- Dynamic Views -->
+        <div class="relative w-full flex-grow overflow-hidden bg-app-bg">
+            <div id="view-dashboard" class="view-section px-6 no-scrollbar"></div>
+            <div id="view-transactions" class="view-section px-6 no-scrollbar"></div>
+            <div id="view-planner" class="view-section px-6 no-scrollbar"></div>
+            <div id="view-analytics" class="view-section px-6 no-scrollbar"></div>
+            <div id="view-settings" class="view-section px-6 no-scrollbar"></div>
+        </div>
+
+        <!-- Floating Navigation -->
+        <nav class="floating-nav">
+            <button onclick="Router.navigate('dashboard')" class="nav-item active" data-target="dashboard">
+                <i class="ph-fill ph-squares-four"></i>
+            </button>
+            <button onclick="Router.navigate('transactions')" class="nav-item" data-target="transactions">
+                <i class="ph-bold ph-list-bullets"></i>
+            </button>
+            
+            <div class="fab-container">
+                <button onclick="UI.openSheet('expense-sheet')" class="nav-fab">
+                    <i class="ph-bold ph-plus"></i>
+                </button>
+            </div>
+            
+            <button onclick="Router.navigate('planner')" class="nav-item" data-target="planner">
+                <i class="ph-bold ph-calendar-star"></i>
+            </button>
+            <button onclick="Router.navigate('analytics')" class="nav-item" data-target="analytics">
+                <i class="ph-bold ph-chart-pie-slice"></i>
+            </button>
+        </nav>
+    </div>
+
+    <!-- OVERLAYS & MODALS -->
+    <div id="sheet-overlay" class="sheet-overlay" onclick="UI.closeSheets()"></div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="confirm-modal" class="confirm-modal flex flex-col items-center">
+        <div class="w-14 h-14 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4" id="confirm-icon-bg">
+            <i class="ph-duotone ph-warning text-3xl" id="confirm-icon"></i>
+        </div>
+        <h3 class="text-lg font-black text-slate-900 mb-2 tracking-tight" id="confirm-title">Are you sure?</h3>
+        <p class="text-sm font-medium text-slate-500 mb-6" id="confirm-text">This action cannot be undone.</p>
+        <div class="flex gap-3 w-full">
+            <button onclick="UI.closeConfirm()" class="flex-1 py-3 rounded-xl font-bold bg-slate-100 text-slate-600 active:bg-slate-200 transition-colors">Cancel</button>
+            <button id="confirm-btn" class="flex-1 py-3 rounded-xl font-bold bg-red-500 text-white shadow-md shadow-red-500/30 active:scale-95 transition-transform">Confirm</button>
+        </div>
+    </div>
+
+    <!-- BOTTOM SHEETS -->
+    
+    <!-- Add Expense -->
+    <div id="expense-sheet" class="bottom-sheet">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-black tracking-tight" id="expense-sheet-title">New Transaction</h3>
+            <button onclick="UI.closeSheets()" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">
+                <i class="ph-bold ph-x"></i>
+            </button>
+        </div>
+        <form id="expense-form" class="flex flex-col flex-grow" onsubmit="App.saveExpense(event)">
+            <input type="hidden" id="exp-id">
+            <div class="mb-8 text-center">
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Amount</p>
+                <div class="flex items-center justify-center">
+                    <span class="text-3xl font-black text-slate-300 mr-1" id="currency-symbol">$</span>
+                    <input type="number" id="exp-amount" class="fintech-input" placeholder="0.00" step="0.01" required>
+                </div>
+            </div>
+            <div class="space-y-4 mb-8">
+                <div class="relative">
+                    <i class="ph-duotone ph-shopping-bag absolute left-4 top-1/2 -translate-y-1/2 text-2xl text-slate-400"></i>
+                    <input type="text" id="exp-name" class="native-field pl-12" placeholder="What did you buy?" required>
+                </div>
+                <div class="relative">
+                    <i class="ph-duotone ph-calendar absolute left-4 top-1/2 -translate-y-1/2 text-2xl text-slate-400"></i>
+                    <!-- Past and today allowed. Future blocked dynamically by JS initialization -->
+                    <input type="date" id="exp-date" class="native-field pl-12" required>
+                </div>
+            </div>
+            <button type="submit" class="w-full bg-blue-600 text-white font-bold text-lg py-4 rounded-2xl shadow-fab active:scale-95 transition-transform mt-auto">
+                Save Transaction
+            </button>
+        </form>
+    </div>
+
+    <!-- Add Plan -->
+    <div id="plan-sheet" class="bottom-sheet">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-black tracking-tight">Plan Purchase</h3>
+            <button onclick="UI.closeSheets()" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">
+                <i class="ph-bold ph-x"></i>
+            </button>
+        </div>
+        <form id="plan-form" class="flex flex-col space-y-4 flex-grow" onsubmit="App.savePlan(event)">
+            <input type="text" id="plan-name" class="native-field" placeholder="Item Name (e.g. MacBook Pro)" required>
+            <div class="flex gap-4">
+                <input type="number" id="plan-amount" class="native-field w-1/2" placeholder="Est. Price" step="0.01" required>
+                <!-- Today and future allowed. Past blocked dynamically by JS initialization -->
+                <input type="date" id="plan-date" class="native-field w-1/2" required>
+            </div>
+            <button type="submit" class="w-full bg-slate-900 text-white font-bold text-lg py-4 rounded-2xl shadow-card active:scale-95 transition-transform mt-8">
+                Add to Purchase Planner
+            </button>
+        </form>
+    </div>
+
+    <!-- Generate Statement Options -->
+    <div id="report-sheet" class="bottom-sheet">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-black tracking-tight">Export Statement</h3>
+            <button onclick="UI.closeSheets()" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">
+                <i class="ph-bold ph-x"></i>
+            </button>
+        </div>
+        <div class="flex flex-col space-y-4">
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-4">
+                <i class="ph-duotone ph-file-pdf text-3xl text-red-500"></i>
+                <div>
+                    <h4 class="font-bold text-slate-800">Monthly PDF Report</h4>
+                    <p class="text-xs font-semibold text-slate-500">Includes all activity and insights.</p>
+                </div>
+            </div>
+            <button onclick="App.generateReport()" class="w-full bg-slate-900 text-white font-bold text-lg py-4 rounded-2xl shadow-card active:scale-95 transition-transform mt-4">
+                Generate & Download
+            </button>
+        </div>
+    </div>
+
+    <!-- Premium Currency Sheet -->
+    <div id="currency-sheet" class="bottom-sheet">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-black tracking-tight">Select Currency</h3>
+            <button onclick="UI.closeSheets()" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">
+                <i class="ph-bold ph-x"></i>
+            </button>
+        </div>
+        <div class="flex flex-col space-y-2 overflow-y-auto max-h-[60vh] no-scrollbar pb-8" id="currency-list-container">
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="absolute top-12 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-full font-bold text-sm shadow-2xl flex items-center gap-2 opacity-0 pointer-events-none transition-all duration-300 z-[9999] transform -translate-y-10 w-max max-w-[90%]">
+        <i class="ph-fill ph-check-circle text-green-400 text-lg" id="toast-icon"></i>
+        <span id="toast-msg">Success</span>
+    </div>
+    
+    <!-- PDF CONTAINER (Hidden) -->
+    <div id="pdf-container" class="hidden bg-white p-12 text-black w-[800px]"></div>
+
+</div>
+
+<script>
+    /* =========================================================================
+       1. DATA STORE & POLYFILLS
+       ========================================================================= */
+    const DB_KEY = 'ledger_premium_v4';
+    
+    // Fallback ID generator (solves crypto.randomUUID error in older webviews)
+    const generateID = () => {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+        return 'xxxx-xxxx-xxx-xxxx'.replace(/[x]/g, () => (Math.random() * 16 | 0).toString(16));
+    };
+
+    const defaultData = {
+        hasSeenOnboarding: false,
+        settings: { budget: 3000, currency: '₹', userName: 'My Ledger', userAvatar: 'https://api.dicebear.com/7.x/notionists/svg?seed=Happy&backgroundColor=transparent&mood=happy' },
+        expenses: [], 
+        plans: []     
+    };
+
+    const Store = {
+        data: {},
+        init() {
+            const saved = localStorage.getItem(DB_KEY);
+            this.data = saved ? JSON.parse(saved) : structuredClone(defaultData);
+            document.getElementById('currency-symbol').innerText = this.data.settings.currency;
+        },
+        save() { localStorage.setItem(DB_KEY, JSON.stringify(this.data)); },
+        reset() { localStorage.removeItem(DB_KEY); window.location.reload(); }
+    };
+
+    /* =========================================================================
+       2. UTILITIES, DATES & MATH
+       ========================================================================= */
+    const Utils = {
+        formatMoney(amount) {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+                .format(amount).replace('$', Store.data.settings.currency);
+        },
+        formatDate(dateString) {
+            // Parses purely by string components to avoid Timezone drift
+            const [y, m, d] = dateString.split('-');
+            const date = new Date(y, m - 1, d);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        },
+        getToday() { 
+            const d = new Date();
+            const tzoffset = d.getTimezoneOffset() * 60000;
+            return new Date(d - tzoffset).toISOString().split('T')[0];
+        },
+        
+        getStats() {
+            // Absolute Date Integrity: Rely purely on the saved date string prefix (YYYY-MM)
+            const todayStr = this.getToday(); 
+            const currentMonthPrefix = todayStr.substring(0, 7); 
+            const year = parseInt(todayStr.substring(0, 4));
+            const month = parseInt(todayStr.substring(5, 7)) - 1; 
+
+            let spentMonth = 0; let spentToday = 0;
+            Store.data.expenses.forEach(e => {
+                if (e.date.startsWith(currentMonthPrefix)) spentMonth += parseFloat(e.amount);
+                if (e.date === todayStr) spentToday += parseFloat(e.amount);
+            });
+
+            const budget = parseFloat(Store.data.settings.budget);
+            const remaining = budget - spentMonth;
+            const percent = budget > 0 ? Math.min((spentMonth / budget) * 100, 100) : 0;
+            
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const todayDateNum = parseInt(todayStr.substring(8, 10));
+            const daysLeft = daysInMonth - todayDateNum + 1;
+            const safeDaily = remaining > 0 ? (remaining / daysLeft) : 0;
+
+            return { spentMonth, spentToday, budget, remaining, percent, safeDaily };
+        }
+    };
+
+    /* =========================================================================
+       3. UI & COMPONENTS
+       ========================================================================= */
+    let analyticsChart = null;
+    let dashboardTrendChart = null;
+
+    const UI = {
+        toast(msg, isError = false) {
+            const el = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
+            icon.className = isError ? "ph-fill ph-warning-circle text-red-400 text-lg" : "ph-fill ph-check-circle text-green-400 text-lg";
+            document.getElementById('toast-msg').innerText = msg;
+            el.classList.remove('opacity-0', '-translate-y-10');
+            setTimeout(() => el.classList.add('opacity-0', '-translate-y-10'), 2500);
+        },
+        openSheet(id) {
+            document.getElementById('sheet-overlay').classList.add('open');
+            document.getElementById(id).classList.add('open');
+            
+            // Set Date Defaults & Enforce Rules
+            const today = Utils.getToday();
+            if(id === 'expense-sheet') {
+                const ed = document.getElementById('exp-date');
+                ed.max = today;
+                if(!ed.value) ed.value = today;
+            }
+            if(id === 'plan-sheet') {
+                const pd = document.getElementById('plan-date');
+                pd.min = today;
+                if(!pd.value) pd.value = today;
+            }
+        },
+        closeSheets() {
+            document.getElementById('sheet-overlay').classList.remove('open');
+            document.querySelectorAll('.bottom-sheet').forEach(el => el.classList.remove('open'));
+            this.closeConfirm();
+        },
+        confirm(title, text, confirmLabel, actionFn, isDestructive = true) {
+            document.getElementById('confirm-title').innerText = title;
+            document.getElementById('confirm-text').innerText = text;
+            
+            const btn = document.getElementById('confirm-btn');
+            btn.innerText = confirmLabel;
+            btn.className = `flex-1 py-3 rounded-xl font-bold text-white active:scale-95 transition-transform ${isDestructive ? 'bg-red-500 shadow-md shadow-red-500/30' : 'bg-blue-600 shadow-md shadow-blue-500/30'}`;
+            
+            const iconBg = document.getElementById('confirm-icon-bg');
+            const icon = document.getElementById('confirm-icon');
+            if (isDestructive) {
+                iconBg.className = 'w-14 h-14 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4';
+                icon.className = 'ph-duotone ph-warning text-3xl';
+            } else {
+                iconBg.className = 'w-14 h-14 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-4';
+                icon.className = 'ph-duotone ph-question text-3xl';
             }
 
-            setLoading(true);
+            btn.onclick = () => { actionFn(); this.closeConfirm(); };
             
-            const payload = {
-                defaultUrl: defaultUrl,
-                androidUrl: document.getElementById('android-url').value.trim(),
-                iosUrl: document.getElementById('ios-url').value.trim(),
-                customAlias: document.getElementById('custom-alias').value.trim(),
-                expiry: document.getElementById('expiry-time').value
+            document.getElementById('sheet-overlay').classList.add('open');
+            document.getElementById('confirm-modal').classList.add('open');
+        },
+        closeConfirm() {
+            document.getElementById('confirm-modal').classList.remove('open');
+            if(!document.querySelector('.bottom-sheet.open')) {
+                document.getElementById('sheet-overlay').classList.remove('open');
+            }
+        },
+        
+        // --- DASHBOARD RENDER ---
+        renderDashboard() {
+            const stats = Utils.getStats();
+            const recent = [...Store.data.expenses].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 4);
+            
+            let glowClass = 'glow-healthy';
+            if (stats.percent > 75) glowClass = 'glow-warning';
+            if (stats.percent > 90) glowClass = 'glow-critical';
+
+            const html = `
+                <div class="hero-card rounded-[32px] p-6 text-white mb-6 shadow-card">
+                    <div class="glow-orb ${glowClass}"></div>
+                    
+                    <div class="relative z-10 flex flex-col justify-between h-full min-h-[190px]">
+                        <div class="flex justify-between items-start">
+                            <span class="text-[11px] font-bold text-slate-300 uppercase tracking-widest mt-1">Remaining Budget</span>
+                            <span class="px-3 py-1.5 text-[10px] font-bold bg-white/10 backdrop-blur-md rounded-full text-white border border-white/10 shadow-sm">${stats.percent.toFixed(0)}% Used</span>
+                        </div>
+                        
+                        <div class="my-3">
+                            <h1 class="text-[40px] font-black tracking-tight text-white drop-shadow-md leading-none">${Utils.formatMoney(stats.remaining)}</h1>
+                        </div>
+                        
+                        <div class="flex justify-between items-end pt-4 border-t border-slate-700 mt-auto">
+                            <div>
+                                <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Total Limit</p>
+                                <p class="text-[15px] font-bold text-slate-200 leading-none">${Utils.formatMoney(stats.budget)}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Spent Month</p>
+                                <p class="text-[15px] font-bold text-slate-200 leading-none">${Utils.formatMoney(stats.spentMonth)}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div class="bg-white p-5 rounded-3xl shadow-card border border-slate-50">
+                        <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center mb-3">
+                            <i class="ph-duotone ph-calendar-check text-blue-500 text-xl"></i>
+                        </div>
+                        <p class="text-[10px] font-bold text-app-muted uppercase tracking-wider mb-1">Spent Today</p>
+                        <p class="text-[19px] font-black text-app-text tracking-tight leading-none">${Utils.formatMoney(stats.spentToday)}</p>
+                    </div>
+                    
+                    <div class="bg-white p-5 rounded-3xl shadow-card border border-slate-50">
+                        <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center mb-3">
+                            <i class="ph-duotone ph-shield-check text-emerald-500 text-xl"></i>
+                        </div>
+                        <p class="text-[10px] font-bold text-app-muted uppercase tracking-wider mb-1">Safe Daily</p>
+                        <p class="text-[19px] font-black text-emerald-600 tracking-tight leading-none">${Utils.formatMoney(stats.safeDaily)}</p>
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <div class="flex justify-between items-end mb-4 px-2">
+                        <h3 class="text-lg font-black tracking-tight text-app-text">Recent Activity</h3>
+                        <button onclick="Router.navigate('transactions')" class="text-sm font-bold text-blue-600 active:opacity-70">See All</button>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        ${recent.length === 0 ? 
+                            `<div class="bg-white p-8 rounded-3xl text-center shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-3">
+                                <div class="relative w-20 h-20 flex items-center justify-center mb-2">
+                                    <div class="absolute inset-0 bg-blue-50 rounded-full scale-110"></div>
+                                    <i class="ph-duotone ph-receipt text-4xl text-blue-400 relative z-10"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-800 text-[17px]">No expenses recorded</h4>
+                                    <p class="text-sm font-medium text-slate-400 mt-1 flex items-center justify-center gap-1">Tap the <i class="ph-bold ph-plus text-white bg-blue-500 rounded-full p-1 text-[10px] shadow-sm"></i> button to start tracking</p>
+                                </div>
+                            </div>` : 
+                            recent.map(e => `
+                                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-50 flex items-center justify-between active:scale-95 transition-transform" onclick="App.editExpense('${e.id}')">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 shrink-0">
+                                            <i class="ph-duotone ph-receipt text-xl text-slate-600"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold text-app-text">${e.name}</h4>
+                                            <p class="text-[11px] font-bold uppercase tracking-wider text-app-muted mt-0.5">${Utils.formatDate(e.date)}</p>
+                                        </div>
+                                    </div>
+                                    <p class="font-black text-app-text tracking-tight">-${Utils.formatMoney(e.amount)}</p>
+                                </div>
+                            `).join('')
+                        }
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <h3 class="text-lg font-black tracking-tight text-app-text px-2 mb-4">Weekly Trend</h3>
+                    <div class="bg-white rounded-3xl shadow-card p-5 h-44 border border-slate-50">
+                        <canvas id="dashboardTrendChart"></canvas>
+                    </div>
+                </div>
+            `;
+            document.getElementById('view-dashboard').innerHTML = html;
+
+            if(dashboardTrendChart) dashboardTrendChart.destroy();
+            const dCtx = document.getElementById('dashboardTrendChart').getContext('2d');
+            
+            const last7DaysData = []; const labels = [];
+            for(let i=6; i>=0; i--) {
+                const d = new Date(); d.setDate(d.getDate() - i);
+                const tzoffset = d.getTimezoneOffset() * 60000;
+                const dStr = new Date(d - tzoffset).toISOString().split('T')[0];
+                labels.push(d.toLocaleDateString('en-US', { weekday: 'short' }));
+                last7DaysData.push(Store.data.expenses.filter(e => e.date === dStr).reduce((sum, e) => sum + parseFloat(e.amount), 0));
+            }
+
+            const gradient = dCtx.createLinearGradient(0, 0, 0, 150);
+            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.2)');
+            gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+
+            dashboardTrendChart = new Chart(dCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: last7DaysData, borderColor: '#3B82F6', backgroundColor: gradient,
+                        borderWidth: 3, pointRadius: 0, pointHoverRadius: 6, fill: true, tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    scales: {
+                        x: { display: true, grid: { display: false }, ticks: { color: '#94A3B8', font: { size: 10, weight: 'bold' } } },
+                        y: { display: false, min: 0 }
+                    },
+                    interaction: { mode: 'index', intersect: false }
+                }
+            });
+        },
+
+        // --- TRANSACTIONS RENDER ---
+        renderTransactions() {
+            const exps = [...Store.data.expenses].sort((a,b) => new Date(b.date) - new Date(a.date));
+            const html = `
+                <div class="space-y-3 pb-8">
+                    ${exps.length === 0 ? 
+                        `<div class="text-center mt-20 text-app-muted"><i class="ph-duotone ph-magnifying-glass text-6xl mb-4 opacity-50"></i><p class="font-bold text-lg">No records found</p></div>` : 
+                        exps.map(e => `
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-50 flex items-center justify-between active:scale-95 transition-transform cursor-pointer" onclick="App.editExpense('${e.id}')">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 shrink-0">
+                                        <i class="ph-duotone ph-shopping-cart text-xl text-slate-600"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-app-text">${e.name}</h4>
+                                        <p class="text-[11px] font-bold uppercase tracking-wider text-app-muted mt-0.5">${Utils.formatDate(e.date)}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-black text-app-text tracking-tight">-${Utils.formatMoney(e.amount)}</p>
+                                    <button onclick="event.stopPropagation(); App.deleteExpense('${e.id}')" class="text-[10px] font-bold text-red-500 mt-1 uppercase tracking-widest bg-red-50 px-2 py-0.5 rounded active:bg-red-100 transition-colors">Delete</button>
+                                </div>
+                            </div>
+                        `).join('')
+                    }
+                </div>
+            `;
+            document.getElementById('view-transactions').innerHTML = html;
+        },
+
+        // --- PLANNER RENDER ---
+        renderPlanner() {
+            const plans = [...Store.data.plans].sort((a,b) => new Date(a.date) - new Date(b.date));
+            const pending = plans.filter(p => p.status === 'pending');
+            
+            const html = `
+                <button onclick="UI.openSheet('plan-sheet')" class="w-full bg-white border-2 border-dashed border-slate-200 text-slate-500 font-bold py-4 rounded-3xl mb-8 flex items-center justify-center gap-2 active:bg-slate-50 transition-colors">
+                    <i class="ph-bold ph-plus"></i> Add Planned Purchase
+                </button>
+
+                <div class="space-y-4">
+                    ${pending.map((p, i) => {
+                        const gradients = [
+                            'bg-gradient-to-r from-blue-500 to-indigo-500',
+                            'bg-gradient-to-r from-fuchsia-500 to-pink-500',
+                            'bg-gradient-to-r from-orange-400 to-rose-400'
+                        ];
+                        const bg = gradients[i % gradients.length];
+                        
+                        return `
+                        <div class="bg-white rounded-3xl shadow-card overflow-hidden relative border border-slate-50">
+                            <div class="h-24 ${bg} p-4 flex items-end">
+                                <button onclick="App.deletePlan('${p.id}')" class="absolute top-4 right-4 w-8 h-8 bg-black/20 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-transform active:scale-90"><i class="ph-bold ph-trash"></i></button>
+                                <div class="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
+                                    <i class="ph-fill ph-star text-2xl text-white"></i>
+                                </div>
+                            </div>
+                            <div class="p-5 flex justify-between items-end">
+                                <div>
+                                    <h4 class="font-black text-lg text-app-text mb-1">${p.name}</h4>
+                                    <p class="text-[10px] font-bold text-app-muted uppercase tracking-widest">Goal: ${Utils.formatDate(p.date)}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-black text-xl text-app-text tracking-tight mb-2">${Utils.formatMoney(p.amount)}</p>
+                                    <button onclick="App.markPlanBought('${p.id}')" class="bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wider px-4 py-2 rounded-full active:scale-95 transition-transform">
+                                        Mark Bought
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `}).join('')}
+                    ${pending.length === 0 ? `<div class="text-center text-slate-400 font-bold mt-10"><i class="ph-duotone ph-calendar-star text-5xl mb-2"></i><p>No planned purchases yet.</p></div>` : ''}
+                </div>
+            `;
+            document.getElementById('view-planner').innerHTML = html;
+        },
+
+        // --- ANALYTICS RENDER ---
+        renderAnalytics() {
+            const stats = Utils.getStats();
+            const html = `
+                <div class="bg-white rounded-4xl p-6 shadow-card mb-6 border border-slate-50">
+                    <h3 class="font-black text-lg mb-6 text-center tracking-tight text-app-text">Budget Utilization</h3>
+                    <div class="relative w-full h-48 mb-4">
+                        <canvas id="donutChart"></canvas>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <span class="text-[32px] font-black text-slate-800 tracking-tighter">${stats.percent.toFixed(0)}%</span>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Used</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-slate-900 rounded-3xl p-5 text-white shadow-card">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Limit</p>
+                        <p class="text-xl font-black">${Utils.formatMoney(stats.budget)}</p>
+                    </div>
+                    <div class="bg-white rounded-3xl p-5 shadow-card border border-slate-50">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Spent</p>
+                        <p class="text-xl font-black text-blue-600">${Utils.formatMoney(stats.spentMonth)}</p>
+                    </div>
+                </div>
+            `;
+            document.getElementById('view-analytics').innerHTML = html;
+
+            if(analyticsChart) analyticsChart.destroy();
+            const ctx = document.getElementById('donutChart').getContext('2d');
+            const spentColor = stats.percent > 90 ? '#E11D48' : (stats.percent > 75 ? '#F59E0B' : '#3B82F6');
+            
+            analyticsChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Spent', 'Remaining'],
+                    datasets: [{
+                        data: [stats.spentMonth, Math.max(stats.remaining, 0)],
+                        backgroundColor: [spentColor, '#F1F5F9'], borderWidth: 0, hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '80%',
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } }
+                }
+            });
+        },
+
+        // --- SETTINGS RENDER ---
+        renderSettings() {
+            const s = Store.data.settings;
+            const currencies = [
+                {sym: '₹', name: 'INR (₹)'}, {sym: '$', name: 'USD ($)'}, {sym: '€', name: 'EUR (€)'},
+                {sym: '£', name: 'GBP (£)'}, {sym: '¥', name: 'JPY (¥)'}, {sym: 'A$', name: 'AUD (A$)'},
+                {sym: 'C$', name: 'CAD (C$)'}, {sym: 'د.إ', name: 'AED (د.إ)'}, {sym: '₹', name: 'Nepali Rupee (₹)'}
+            ];
+            
+            const html = `
+                <div class="space-y-6">
+                    <div class="bg-white rounded-4xl p-6 shadow-card border border-slate-50">
+                        <div class="flex items-center gap-4 mb-6 border-b border-slate-100 pb-6 relative">
+                            <div class="relative cursor-pointer shrink-0">
+                                <img src="${s.userAvatar}" class="w-16 h-16 rounded-full border border-slate-200 object-cover shadow-sm">
+                                <label class="absolute bottom-0 right-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center border-2 border-white cursor-pointer active:scale-90 transition-transform">
+                                    <i class="ph-bold ph-camera text-[10px]"></i>
+                                    <input type="file" accept="image/*" class="hidden" onchange="App.updateAvatar(event)">
+                                </label>
+                            </div>
+                            <div class="w-full flex flex-col items-start">
+                                <div class="relative w-full mb-1 group">
+                                    <input type="text" value="${s.userName || 'My Ledger'}" class="font-black text-xl text-app-text w-full bg-transparent border-b border-dashed border-slate-300 outline-none focus:border-solid focus:border-blue-500 pb-1 pr-6 transition-colors" onchange="App.updateSettings('userName', this.value)" placeholder="Your Name">
+                                    <i class="ph-duotone ph-pencil-simple absolute right-0 bottom-3 text-slate-400 group-focus-within:text-blue-500 transition-colors pointer-events-none"></i>
+                                </div>
+                                <span class="px-2 py-0.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-[10px] font-bold uppercase tracking-widest rounded inline-block">Premium</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Monthly Budget Limit</label>
+                                <input type="number" value="${s.budget}" class="native-field" onchange="App.updateSettings('budget', this.value)">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Currency</label>
+                                <button onclick="App.openCurrencySheet()" class="native-field w-full flex items-center justify-between text-left cursor-pointer bg-[#F8FAFC] active:bg-[#F1F5F9] transition-colors">
+                                    <span id="settings-currency-display" class="font-bold text-slate-800">${s.currency === '₹' ? 'INR (₹)' : s.currency}</span>
+                                    <i class="ph-bold ph-caret-down text-slate-400"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-3xl shadow-card overflow-hidden border border-slate-50">
+                        <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/50">
+                            <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Data Management</h4>
+                        </div>
+                        <button onclick="UI.openSheet('report-sheet')" class="w-full flex items-center justify-between p-5 border-b border-slate-100 active:bg-slate-50 transition-colors">
+                            <span class="font-bold text-slate-700 flex items-center gap-3"><i class="ph-duotone ph-file-pdf text-xl text-blue-500"></i> Generate Statement</span>
+                            <i class="ph-bold ph-caret-right text-slate-300"></i>
+                        </button>
+                        <button onclick="App.exportBackup()" class="w-full flex items-center justify-between p-5 border-b border-slate-100 active:bg-slate-50 transition-colors">
+                            <span class="font-bold text-slate-700 flex items-center gap-3"><i class="ph-duotone ph-export text-xl text-emerald-500"></i> Export Backup</span>
+                            <i class="ph-bold ph-caret-right text-slate-300"></i>
+                        </button>
+                        <label class="w-full flex items-center justify-between p-5 border-b border-slate-100 active:bg-slate-50 transition-colors cursor-pointer m-0">
+                            <span class="font-bold text-slate-700 flex items-center gap-3"><i class="ph-duotone ph-import text-xl text-purple-500"></i> Import Backup</span>
+                            <i class="ph-bold ph-caret-right text-slate-300"></i>
+                            <input type="file" accept=".json" class="hidden" onchange="App.importBackup(event)">
+                        </label>
+                        <button onclick="App.factoryReset()" class="w-full flex items-center justify-between p-5 active:bg-slate-50 transition-colors">
+                            <span class="font-bold text-red-500 flex items-center gap-3"><i class="ph-duotone ph-warning-circle text-xl"></i> Factory Reset</span>
+                            <i class="ph-bold ph-caret-right text-slate-300"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('view-settings').innerHTML = html;
+        }
+
+    };
+
+    /* =========================================================================
+       4. APPLICATION LOGIC
+       ========================================================================= */
+    const Router = {
+        routes: ['dashboard', 'transactions', 'planner', 'analytics', 'settings'],
+        titles: { dashboard: 'Overview', transactions: 'Activity', planner: 'Purchase Planner', analytics: 'Insights', settings: 'Settings' },
+        
+        init() {
+            window.addEventListener('hashchange', () => {
+                const hashRoute = window.location.hash.replace('#', '');
+                if (hashRoute && this.routes.includes(hashRoute)) this.renderRoute(hashRoute);
+                else this.renderRoute('dashboard');
+            });
+        },
+
+        navigate(route) {
+            if(!this.routes.includes(route)) route = 'dashboard';
+            if(route === 'dashboard') {
+                history.pushState('', document.title, window.location.pathname + window.location.search);
+                this.renderRoute('dashboard');
+            } else {
+                // FIX: Agar URL already same hai (jaise pehle se hi transactions par ho), 
+                // toh hashchange ka wait mat karo, direct UI ko refresh kar do.
+                if (window.location.hash.replace('#', '') === route) {
+                    this.renderRoute(route);
+                } else {
+                    window.location.hash = route; // Naye page ke liye hash change karo
+                }
+            }
+        },
+
+        renderRoute(route) {
+            document.getElementById('header-title').innerText = this.titles[route];
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(`view-${route}`).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            const navBtn = document.querySelector(`.nav-item[data-target="${route}"]`);
+            if(navBtn) navBtn.classList.add('active');
+
+            if(route === 'dashboard') UI.renderDashboard();
+            if(route === 'transactions') UI.renderTransactions();
+            if(route === 'planner') UI.renderPlanner();
+            if(route === 'analytics') UI.renderAnalytics();
+            if(route === 'settings') UI.renderSettings();
+        }
+    };
+
+
+    const App = {
+        init() {
+            Store.init();
+            Router.init(); // Initialize hash routing
+            if(Store.data.settings.userAvatar) document.getElementById('header-avatar').src = Store.data.settings.userAvatar;
+            setTimeout(() => {
+                document.getElementById('splash-screen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('splash-screen').style.display = 'none';
+                    if(!Store.data.hasSeenOnboarding) {
+                        this.startOnboarding();
+                    } else {
+                        document.getElementById('main-app').classList.add('active');
+                        Router.navigate('dashboard');
+                    }
+                }, 600);
+            }, 2000);
+        },
+
+        startOnboarding() {
+            const ob = document.getElementById('onboarding-screen');
+            ob.classList.add('active');
+            let currentSlide = 0;
+            const slides = document.querySelectorAll('#onboarding-slides > div');
+            const dots = document.querySelectorAll('#onboarding-dots > div');
+            const btn = document.getElementById('btn-next-onboard');
+
+            btn.onclick = () => {
+                if (currentSlide < 2) {
+                    currentSlide++;
+                    slides.forEach(s => s.style.transform = `translateX(-${currentSlide * 100}%)`);
+                    dots.forEach((d, i) => d.className = i === currentSlide ? 'w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]' : 'w-2.5 h-2.5 rounded-full bg-slate-700');
+                    if (currentSlide === 2) btn.innerText = "Start Tracking";
+                } else {
+                    Store.data.hasSeenOnboarding = true;
+                    Store.save();
+                    ob.classList.remove('active');
+                    setTimeout(() => {
+                        ob.style.display = 'none';
+                        document.getElementById('main-app').classList.add('active');
+                        Router.navigate('dashboard');
+                    }, 500);
+                }
+            };
+        },
+
+        saveExpense(e) {
+            e.preventDefault();
+            const idInput = document.getElementById('exp-id').value;
+            const data = {
+                name: document.getElementById('exp-name').value,
+                amount: parseFloat(document.getElementById('exp-amount').value),
+                date: document.getElementById('exp-date').value
             };
 
-            try {
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'cors',
-                    cache: 'no-cache',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Required by Apps Script for POST
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Network response was not ok: ${response.statusText}`);
-                }
-
-                const result = await response.json();
-
-                if (result.status === 'success') {
-                    displayResult(result.shortLink);
-                    showToast('Link shortened successfully!', 'success');
-                } else {
-                    throw new Error(result.message || 'An unknown error occurred.');
-                }
-
-            } catch (error) {
-                console.error('Error:', error);
-                showToast(error.message, 'error');
-            } finally {
-                setLoading(false);
+            if (idInput) {
+                const idx = Store.data.expenses.findIndex(x => x.id === idInput);
+                if(idx > -1) Store.data.expenses[idx] = { ...Store.data.expenses[idx], ...data };
+                UI.toast('Transaction Updated');
+            } else {
+                data.id = generateID();
+                Store.data.expenses.push(data);
+                UI.toast('Expense Added');
             }
-        }
-
-        function displayResult(link) {
-            shortLinkEl.textContent = link;
-            resultCard.style.display = 'block';
-            resultCard.style.animation = 'fadeInScale 0.5s ease-out forwards';
             
-            // Generate QR Code
-            qrcodeContainer.innerHTML = '';
-            qrcode = new QRCode(qrcodeContainer, {
-                text: link,
-                width: 150,
-                height: 150,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
+            Store.save();
+            UI.closeSheets();
+            const currentRoute = document.querySelector('.view-section.active').id.replace('view-', '');
+            Router.navigate(currentRoute);
+        },
+
+        editExpense(id) {
+            const exp = Store.data.expenses.find(e => e.id === id);
+            if(!exp) return;
+            document.getElementById('expense-sheet-title').innerText = 'Edit Transaction';
+            document.getElementById('expense-form').reset();
+            document.getElementById('exp-id').value = exp.id;
+            document.getElementById('exp-amount').value = exp.amount;
+            document.getElementById('exp-name').value = exp.name;
+            document.getElementById('exp-date').value = exp.date;
+            UI.openSheet('expense-sheet');
+        },
+
+        deleteExpense(id) {
+            UI.confirm('Delete Expense?', 'This action will permanently remove this record.', 'Delete', () => {
+                Store.data.expenses = Store.data.expenses.filter(e => e.id !== id);
+                Store.save();
+                UI.toast('Expense Deleted');
+                Router.navigate('transactions');
+            });
+        },
+
+        savePlan(e) {
+            e.preventDefault();
+            const data = {
+                id: generateID(),
+                name: document.getElementById('plan-name').value,
+                amount: parseFloat(document.getElementById('plan-amount').value),
+                date: document.getElementById('plan-date').value,
+                status: 'pending'
+            };
+            Store.data.plans.push(data);
+            Store.save();
+            UI.closeSheets();
+            UI.toast('Added to Purchase Planner');
+            Router.navigate('planner');
+        },
+
+        deletePlan(id) {
+            UI.confirm('Remove Plan?', 'This will be removed from your purchase planner.', 'Remove', () => {
+                Store.data.plans = Store.data.plans.filter(x => x.id !== id);
+                Store.save();
+                UI.toast('Plan Removed');
+                Router.navigate('planner');
+            });
+        },
+
+        markPlanBought(id) {
+            const p = Store.data.plans.find(x => x.id === id);
+            if(p) {
+                UI.confirm('Mark as Purchased?', 'This will move the plan into your actual expenses using its target date.', 'Confirm Purchase', () => {
+                    Store.data.plans = Store.data.plans.filter(x => x.id !== id);
+                    Store.data.expenses.push({ id: generateID(), name: p.name, amount: p.amount, date: p.date });
+                    Store.save();
+                    UI.toast('Purchased! Added to expenses.');
+                    Router.navigate('planner');
+                }, false);
+            }
+        },
+
+        updateSettings(key, value) {
+            if(key === 'budget') value = parseFloat(value);
+            Store.data.settings[key] = value;
+            Store.save();
+            if(key === 'currency') document.getElementById('currency-symbol').innerText = value;
+            UI.toast('Settings Saved');
+        },
+
+        openCurrencySheet() {
+            const currencies = [
+                {sym: '₹', name: 'INR (₹)'}, {sym: '$', name: 'USD ($)'}, {sym: '€', name: 'EUR (€)'},
+                {sym: '£', name: 'GBP (£)'}, {sym: '¥', name: 'JPY (¥)'}, {sym: 'A$', name: 'AUD (A$)'},
+                {sym: 'C$', name: 'CAD (C$)'}, {sym: 'د.إ', name: 'AED (د.إ)'}, {sym: 'N₨', name: 'Nepali Rupee (N₨)'}
+            ];
+            const current = Store.data.settings.currency;
+            const container = document.getElementById('currency-list-container');
+            container.innerHTML = currencies.map(c => `
+                <button onclick="App.selectCurrency('${c.sym}', '${c.name}')" class="w-full text-left p-4 rounded-2xl flex items-center justify-between transition-all ${current === c.sym ? 'bg-blue-50 border border-blue-200' : 'bg-white border border-slate-100 active:bg-slate-50'}">
+                    <span class="font-bold ${current === c.sym ? 'text-blue-600' : 'text-slate-700'}">${c.name}</span>
+                    ${current === c.sym ? '<i class="ph-bold ph-check-circle text-xl text-blue-500"></i>' : ''}
+                </button>
+            `).join('');
+            UI.openSheet('currency-sheet');
+        },
+
+        selectCurrency(sym, name) {
+            this.updateSettings('currency', sym);
+            document.getElementById('settings-currency-display').innerText = name;
+            UI.closeSheets();
+        },
+
+        updateAvatar(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_SIZE = 200;
+                    let width = img.width; let height = img.height;
+                    if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } }
+                    else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } }
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                    
+                    Store.data.settings.userAvatar = dataUrl;
+                    Store.save();
+                    document.getElementById('header-avatar').src = dataUrl;
+                    UI.renderSettings();
+                    UI.toast('Profile Photo Updated');
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        },
+
+        exportBackup() {
+            const dataStr = JSON.stringify(Store.data, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `BudgetTracker_Backup_${Utils.getToday()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            UI.toast('Backup Exported');
+        },
+
+        importBackup(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const parsed = JSON.parse(event.target.result);
+                    if (parsed && typeof parsed === 'object' && parsed.expenses && parsed.plans && parsed.settings) {
+                        Store.data = parsed;
+                        Store.save();
+                        UI.toast('Backup Restored! Reloading...');
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        throw new Error("Invalid format");
+                    }
+                } catch(err) {
+                    UI.toast('Invalid Backup File', true);
+                }
+            };
+            reader.readAsText(file);
+        },
+
+        factoryReset() {
+            UI.confirm('Factory Reset', 'This will permanently wipe all your data, expenses, and settings. You cannot undo this.', 'Reset Everything', () => {
+                Store.reset();
+            });
+        },
+
+        generateReport() {
+            UI.closeSheets();
+            UI.toast('Generating Premium Statement...');
+            
+            const stats = Utils.getStats();
+            const exps = [...Store.data.expenses].sort((a,b) => new Date(b.date) - new Date(a.date));
+            const plans = [...Store.data.plans].filter(p => p.status === 'pending');
+            const monthName = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+            
+            // Name Initial Logic
+            const userName = Store.data.settings.userName || 'My Ledger';
+            const userInitial = userName.charAt(0).toUpperCase();
+
+            // Font sizes reduced and padding adjusted to fit perfectly
+            const expRows = exps.map(e => `
+                <tr>
+                    <td style="padding: 10px 5px; border-bottom: 1px solid #E2E8F0; color: #64748B; width: 25%; font-size: 12px;">${Utils.formatDate(e.date)}</td>
+                    <td style="padding: 10px 5px; border-bottom: 1px solid #E2E8F0; font-weight: 700; width: 50%; color: #0F172A; font-size: 13px;">${e.name}</td>
+                    <td style="padding: 10px 5px; border-bottom: 1px solid #E2E8F0; text-align: right; font-weight: 800; color: #0F172A; width: 25%; font-size: 13px;">-${Utils.formatMoney(e.amount)}</td>
+                </tr>
+            `).join('');
+
+            const planRows = plans.map(p => `
+                <tr>
+                    <td style="padding: 10px 5px; border-bottom: 1px solid #E2E8F0; color: #64748B; width: 25%; font-size: 12px;">${Utils.formatDate(p.date)}</td>
+                    <td style="padding: 10px 5px; border-bottom: 1px solid #E2E8F0; font-weight: 700; width: 50%; color: #0F172A; font-size: 13px;">${p.name} <span style="font-size: 9px; background: #FEF08A; padding: 2px 6px; border-radius: 4px; margin-left: 6px; color: #854D0E; font-weight: 800;">Planned</span></td>
+                    <td style="padding: 10px 5px; border-bottom: 1px solid #E2E8F0; text-align: right; font-weight: 800; color: #F59E0B; width: 25%; font-size: 13px;">${Utils.formatMoney(p.amount)}</td>
+                </tr>
+            `).join('');
+
+            // Width strictly reduced to 700px so it perfectly fits A4. Fonts smaller.
+            const htmlContent = `
+                <div style="width: 700px; padding: 30px; box-sizing: border-box; background: #FFFFFF; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #0F172A; margin: 0 auto;">
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #0F172A; padding-bottom: 15px; margin-bottom: 25px;">
+                        <div style="display: flex; align-items: center; gap: 14px;">
+                            <div style="width: 50px; height: 50px; border-radius: 50%; background: #2563EB; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; line-height: 50px; text-align: center; border: 2px solid #EFF6FF;">
+                                ${userInitial}
+                            </div>
+                            <div>
+                                <h1 style="font-size: 32px; font-weight: 900; margin: 0; letter-spacing: -1px; color: #0F172A;">Financial Statement</h1>
+                                <p style="color: #64748B; font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin: 4px 0 0 0;">${userName}'s Ledger</p>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="font-size: 16px; font-weight: 800; margin: 0; color: #0F172A;">${monthName}</p>
+                        </div>
+                    </div>
+
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                        <tr>
+                            <td style="width: 31%; background: #F8FAFC; padding: 18px; border-radius: 12px; border: 1px solid #E2E8F0;">
+                                <p style="font-size: 10px; color: #64748B; font-weight: 800; text-transform: uppercase; margin: 0 0 6px 0;">Total Limit</p>
+                                <h2 style="font-size: 20px; font-weight: 900; margin: 0; color: #0F172A;">${Utils.formatMoney(stats.budget)}</h2>
+                            </td>
+                            <td style="width: 3.5%;"></td>
+                            <td style="width: 31%; background: #EFF6FF; padding: 18px; border-radius: 12px; border: 1px solid #BFDBFE;">
+                                <p style="font-size: 10px; color: #3B82F6; font-weight: 800; text-transform: uppercase; margin: 0 0 6px 0;">Amount Spent</p>
+                                <h2 style="font-size: 20px; font-weight: 900; margin: 0; color: #2563EB;">${Utils.formatMoney(stats.spentMonth)}</h2>
+                            </td>
+                            <td style="width: 3.5%;"></td>
+                            <td style="width: 31%; background: #0F172A; padding: 18px; border-radius: 12px;">
+                                <p style="font-size: 10px; color: #94A3B8; font-weight: 800; text-transform: uppercase; margin: 0 0 6px 0;">Safe Balance</p>
+                                <h2 style="font-size: 20px; font-weight: 900; margin: 0; color: #FFFFFF;">${Utils.formatMoney(stats.remaining)}</h2>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <h3 style="font-size: 14px; font-weight: 800; margin-bottom: 10px; color: #0F172A; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #F1F5F9; padding-bottom: 6px;">Activity Log</h3>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 35px; table-layout: fixed;">
+                        ${expRows || '<tr><td colspan="3" style="padding: 20px 0; color: #64748B; text-align: center; font-weight: 600; font-style: italic; font-size: 12px;">No expenses recorded yet.</td></tr>'}
+                    </table>
+
+                    ${plans.length > 0 ? `
+                        <div style="page-break-inside: avoid;">
+                            <h3 style="font-size: 14px; font-weight: 800; margin-bottom: 10px; color: #0F172A; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #F1F5F9; padding-bottom: 6px;">Upcoming / Planned Purchases</h3>
+                            <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+                                ${planRows}
+                            </table>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            html2pdf().set({
+                margin: 15, // Pushing margin up slightly for an extra safe border
+                filename: `Ledger_Statement_${Date.now()}.pdf`,
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: { scale: 2, logging: false },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            }).from(htmlContent).save().then(() => {
+                UI.toast('Export Complete!');
+            }).catch(e => {
+                console.error(e);
+                UI.toast('Export failed', true);
             });
         }
 
-        function copyToClipboard() {
-            const link = shortLinkEl.textContent;
-            navigator.clipboard.writeText(link).then(() => {
-                showToast('Copied to clipboard!', 'success');
-            }).catch(err => {
-                showToast('Failed to copy.', 'error');
-            });
-        }
-        
-        function shareLink() {
-            const link = shortLinkEl.textContent;
-            if (navigator.share) {
-                navigator.share({
-                    title: 'Smart Link',
-                    text: 'Check out this link:',
-                    url: link,
-                }).catch(err => console.error('Share failed:', err));
-            } else {
-                showToast('Web Share API not supported.', 'error');
-            }
-        }
+    };
 
-        function toggleAdvancedOptions() {
-            const icon = advancedToggle.querySelector('i');
-            advancedOptions.classList.toggle('show');
-            icon.style.transform = advancedOptions.classList.contains('show') ? 'rotate(180deg)' : 'rotate(0deg)';
-        }
-
-        function setLoading(isLoading) {
-            if (isLoading) {
-                submitBtn.disabled = true;
-                btnText.style.display = 'none';
-                loader.style.display = 'block';
-            } else {
-                submitBtn.disabled = false;
-                btnText.style.display = 'inline';
-                loader.style.display = 'none';
-            }
-        }
-
-        let toastTimeout;
-        function showToast(message, type = 'success') {
-            clearTimeout(toastTimeout);
-            toast.textContent = message;
-            toast.className = `toast ${type} show`;
-            toastTimeout = setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-        }
-
-        function createRipple(event) {
-            const button = event.currentTarget;
-            const circle = document.createElement("span");
-            const diameter = Math.max(button.clientWidth, button.clientHeight);
-            const radius = diameter / 2;
-
-            circle.style.width = circle.style.height = `${diameter}px`;
-            circle.style.left = `${event.clientX - button.offsetLeft - radius}px`;
-            circle.style.top = `${event.clientY - button.offsetTop - radius}px`;
-            circle.classList.add("ripple");
-
-            const ripple = button.getElementsByClassName("ripple")[0];
-            if (ripple) {
-                ripple.remove();
-            }
-
-            button.appendChild(circle);
-        }
+    // Form Initializations
+    document.querySelector('.nav-fab').addEventListener('click', () => {
+        document.getElementById('expense-sheet-title').innerText = 'New Transaction';
+        document.getElementById('expense-form').reset();
+        document.getElementById('exp-id').value = '';
+        UI.openSheet('expense-sheet');
     });
-    </script>
+
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('PWA Service Worker Registered', reg))
+                .catch(err => console.error('PWA Registration Failed', err));
+        });
+    }
+
+    window.onload = () => App.init();
+
+</script>
 </body>
 </html>
