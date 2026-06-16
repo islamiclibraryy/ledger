@@ -349,8 +349,11 @@
                 </div>
                 <div class="relative">
                     <i class="ph-duotone ph-calendar absolute left-4 top-1/2 -translate-y-1/2 text-2xl text-slate-400"></i>
-                    <!-- Past and today allowed. Future blocked dynamically by JS initialization -->
                     <input type="date" id="exp-date" class="native-field pl-12" required>
+                </div>
+                <div class="relative">
+                    <i class="ph-duotone ph-text-align-left absolute left-4 top-4 text-2xl text-slate-400"></i>
+                    <textarea id="exp-note" class="native-field pl-12 py-4 resize-none h-24" placeholder="Add a note (optional)"></textarea>
                 </div>
             </div>
             <button type="submit" class="w-full bg-blue-600 text-white font-bold text-lg py-4 rounded-2xl shadow-fab active:scale-95 transition-transform mt-auto">
@@ -367,17 +370,57 @@
                 <i class="ph-bold ph-x"></i>
             </button>
         </div>
-        <form id="plan-form" class="flex flex-col space-y-4 flex-grow" onsubmit="App.savePlan(event)">
-            <input type="text" id="plan-name" class="native-field" placeholder="Item Name (e.g. MacBook Pro)" required>
-            <div class="flex gap-4">
+        <form id="plan-form" class="flex flex-col flex-grow" onsubmit="App.savePlan(event)">
+            <input type="hidden" id="plan-id">
+            <input type="text" id="plan-name" class="native-field mb-4" placeholder="Item Name (e.g. MacBook Pro)" required>
+            <div class="flex gap-4 mb-4">
                 <input type="number" id="plan-amount" class="native-field w-1/2" placeholder="Est. Price" step="0.01" required>
-                <!-- Today and future allowed. Past blocked dynamically by JS initialization -->
                 <input type="date" id="plan-date" class="native-field w-1/2" required>
             </div>
-            <button type="submit" class="w-full bg-slate-900 text-white font-bold text-lg py-4 rounded-2xl shadow-card active:scale-95 transition-transform mt-8">
-                Add to Purchase Planner
+            <div class="relative mt-auto mb-8">
+                <i class="ph-duotone ph-text-align-left absolute left-4 top-4 text-2xl text-slate-400"></i>
+                <textarea id="plan-note" class="native-field pl-12 py-4 resize-none h-24" placeholder="Where to buy, details, etc. (optional)"></textarea>
+            </div>
+            <button type="submit" class="w-full bg-slate-900 text-white font-bold text-lg py-4 rounded-2xl shadow-card active:scale-95 transition-transform">
+                Save Purchase Plan
             </button>
         </form>
+    </div>
+
+    <!-- Transaction Filter Sheet -->
+    <div id="tx-filter-sheet" class="bottom-sheet">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-black tracking-tight">Filter Activity</h3>
+            <button onclick="UI.closeSheets()" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">
+                <i class="ph-bold ph-x"></i>
+            </button>
+        </div>
+        <div class="flex flex-col space-y-2 pb-6" id="filter-list-container">
+            <!-- Populated dynamically by JS to show active selection -->
+        </div>
+    </div>
+
+    <!-- Custom Date Range Sheet -->
+    <div id="custom-date-sheet" class="bottom-sheet">
+         <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-black tracking-tight">Select Dates</h3>
+            <button onclick="UI.closeSheets()" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">
+                <i class="ph-bold ph-x"></i>
+            </button>
+        </div>
+        <div class="flex flex-col space-y-4 pb-6">
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Start Date</label>
+                <input type="date" id="custom-start-date" class="native-field">
+            </div>
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">End Date</label>
+                <input type="date" id="custom-end-date" class="native-field">
+            </div>
+            <button onclick="App.applyCustomDateFilter()" class="w-full bg-slate-900 text-white font-bold text-lg py-4 rounded-2xl shadow-card active:scale-95 transition-transform mt-4">
+                Apply Filter
+            </button>
+        </div>
     </div>
 
     <!-- Generate Statement Options -->
@@ -508,6 +551,13 @@
     let dashboardTrendChart = null;
 
     const UI = {
+        txFilter: 'today',
+        txStart: '',
+        txEnd: '',
+        analyticsFilter: '7days', // Analytics ke liye default 7 days
+        analyticsStart: '',
+        analyticsEnd: '',
+        
         toast(msg, isError = false) {
             const el = document.getElementById('toast');
             const icon = document.getElementById('toast-icon');
@@ -531,6 +581,19 @@
                 const pd = document.getElementById('plan-date');
                 pd.min = today;
                 if(!pd.value) pd.value = today;
+            }
+            // FIX: Custom Date Range Sheet ke rules
+            if(id === 'custom-date-sheet') {
+                const sd = document.getElementById('custom-start-date');
+                const ed = document.getElementById('custom-end-date');
+                
+                // Future dates ko block karna
+                sd.max = today;
+                ed.max = today;
+                
+                // Default aaj ki date set karna agar khali hai
+                if(!sd.value) sd.value = today;
+                if(!ed.value) ed.value = today;
             }
         },
         closeSheets() {
@@ -694,7 +757,21 @@
                 },
                 options: {
                     responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    plugins: { 
+                        legend: { display: false }, 
+                        tooltip: { 
+                            enabled: true,
+                            backgroundColor: '#0F172A',
+                            titleFont: { size: 11, family: 'Inter' },
+                            bodyFont: { size: 14, weight: 'bold', family: 'Inter' },
+                            padding: 12,
+                            cornerRadius: 12,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) { return Utils.formatMoney(context.raw); }
+                            }
+                        } 
+                    },
                     scales: {
                         x: { display: true, grid: { display: false }, ticks: { color: '#94A3B8', font: { size: 10, weight: 'bold' } } },
                         y: { display: false, min: 0 }
@@ -706,29 +783,95 @@
 
         // --- TRANSACTIONS RENDER ---
         renderTransactions() {
-            const exps = [...Store.data.expenses].sort((a,b) => new Date(b.date) - new Date(a.date));
-            const html = `
-                <div class="space-y-3 pb-8">
-                    ${exps.length === 0 ? 
-                        `<div class="text-center mt-20 text-app-muted"><i class="ph-duotone ph-magnifying-glass text-6xl mb-4 opacity-50"></i><p class="font-bold text-lg">No records found</p></div>` : 
-                        exps.map(e => `
-                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-50 flex items-center justify-between active:scale-95 transition-transform cursor-pointer" onclick="App.editExpense('${e.id}')">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 shrink-0">
-                                        <i class="ph-duotone ph-shopping-cart text-xl text-slate-600"></i>
-                                    </div>
-                                    <div>
-                                        <h4 class="font-bold text-app-text">${e.name}</h4>
-                                        <p class="text-[11px] font-bold uppercase tracking-wider text-app-muted mt-0.5">${Utils.formatDate(e.date)}</p>
-                                    </div>
+            const filterLabels = {
+                'today': 'Today', 'yesterday': 'Yesterday', '7days': 'Last 7 Days',
+                '30days': 'Last 30 Days', '1month': 'This Month', '1year': 'Last 1 Year', 'custom': 'Custom Range'
+            };
+            const label = filterLabels[UI.txFilter] || 'Today';
+            const todayStr = Utils.getToday();
+            
+            const parseYMD = (ymd) => { const [y, m, d] = ymd.split('-'); return new Date(y, m - 1, d); };
+            const todayObj = parseYMD(todayStr);
+
+            let filteredExps = [...Store.data.expenses].filter(e => {
+                if (UI.txFilter === 'today') return e.date === todayStr;
+                const eDate = parseYMD(e.date);
+                if (UI.txFilter === 'yesterday') {
+                    const yest = new Date(todayObj); yest.setDate(yest.getDate() - 1);
+                    return eDate.getTime() === yest.getTime();
+                }
+                if (UI.txFilter === '7days') {
+                    const past = new Date(todayObj); past.setDate(past.getDate() - 7);
+                    return eDate >= past && eDate <= todayObj;
+                }
+                if (UI.txFilter === '30days') {
+                    const past = new Date(todayObj); past.setDate(past.getDate() - 30);
+                    return eDate >= past && eDate <= todayObj;
+                }
+                if (UI.txFilter === '1month') {
+                    return eDate.getFullYear() === todayObj.getFullYear() && eDate.getMonth() === todayObj.getMonth();
+                }
+                if (UI.txFilter === '1year') {
+                    const past = new Date(todayObj); past.setFullYear(past.getFullYear() - 1);
+                    return eDate >= past && eDate <= todayObj;
+                }
+                if (UI.txFilter === 'custom') {
+                    const start = parseYMD(UI.txStart); const end = parseYMD(UI.txEnd);
+                    return eDate >= start && eDate <= end;
+                }
+                return true;
+            }).sort((a,b) => new Date(b.date) - new Date(a.date));
+
+            let displayLabel = label;
+            if(UI.txFilter === 'custom' && UI.txStart && UI.txEnd) {
+                displayLabel = `${Utils.formatDate(UI.txStart)} - ${Utils.formatDate(UI.txEnd)}`;
+            }
+
+            // Generate HTML with Month Grouping
+            let txHtml = '';
+            if(filteredExps.length === 0) {
+                txHtml = `<div class="text-center mt-16 text-slate-400"><i class="ph-duotone ph-magnifying-glass text-6xl mb-4 opacity-50"></i><p class="font-bold text-lg text-slate-500">No records found</p><p class="text-xs font-medium mt-1">Try changing the date filter.</p></div>`;
+            } else {
+                let lastMonthStr = '';
+                filteredExps.forEach(e => {
+                    const eDate = parseYMD(e.date);
+                    const monthStr = eDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+                    
+                    // Month Divider Line
+                    if(monthStr !== lastMonthStr) {
+                        txHtml += `<div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-6 mb-3 px-1 flex items-center gap-3"><div class="h-px bg-slate-200 flex-grow"></div>${monthStr}<div class="h-px bg-slate-200 flex-grow"></div></div>`;
+                        lastMonthStr = monthStr;
+                    }
+                    
+                    txHtml += `
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-50 flex items-center justify-between active:scale-95 transition-transform cursor-pointer mb-3" onclick="App.editExpense('${e.id}')">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 shrink-0">
+                                    <i class="ph-duotone ph-shopping-cart text-xl text-slate-600"></i>
                                 </div>
-                                <div class="text-right">
-                                    <p class="font-black text-app-text tracking-tight">-${Utils.formatMoney(e.amount)}</p>
-                                    <button onclick="event.stopPropagation(); App.deleteExpense('${e.id}')" class="text-[10px] font-bold text-red-500 mt-1 uppercase tracking-widest bg-red-50 px-2 py-0.5 rounded active:bg-red-100 transition-colors">Delete</button>
+                                <div>
+                                    <h4 class="font-bold text-app-text">${e.name}</h4>
+                                    <p class="text-[11px] font-bold uppercase tracking-wider text-app-muted mt-0.5">${Utils.formatDate(e.date)}</p>
                                 </div>
                             </div>
-                        `).join('')
-                    }
+                            <div class="text-right">
+                                <p class="font-black text-app-text tracking-tight">-${Utils.formatMoney(e.amount)}</p>
+                                <button onclick="event.stopPropagation(); App.deleteExpense('${e.id}')" class="text-[10px] font-bold text-red-500 mt-1 uppercase tracking-widest bg-red-50 px-2 py-0.5 rounded active:bg-red-100 transition-colors">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            const html = `
+                <div class="flex justify-between items-center mb-2 px-1">
+                    <h3 class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">${displayLabel}</h3>
+                    <button onclick="App.openFilterSheet('tx')" class="bg-white border border-slate-200 text-blue-600 px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 active:scale-95 transition-transform shadow-sm">
+                        <i class="ph-bold ph-funnel"></i> Filter
+                    </button>
+                </div>
+                <div class="pb-8">
+                    ${txHtml}
                 </div>
             `;
             document.getElementById('view-transactions').innerHTML = html;
@@ -740,7 +883,7 @@
             const pending = plans.filter(p => p.status === 'pending');
             
             const html = `
-                <button onclick="UI.openSheet('plan-sheet')" class="w-full bg-white border-2 border-dashed border-slate-200 text-slate-500 font-bold py-4 rounded-3xl mb-8 flex items-center justify-center gap-2 active:bg-slate-50 transition-colors">
+                <button onclick="document.getElementById('plan-form').reset(); document.getElementById('plan-id').value = ''; UI.openSheet('plan-sheet');" class="w-full bg-white border-2 border-dashed border-slate-200 text-slate-500 font-bold py-4 rounded-3xl mb-8 flex items-center justify-center gap-2 active:bg-slate-50 transition-colors">
                     <i class="ph-bold ph-plus"></i> Add Planned Purchase
                 </button>
 
@@ -754,22 +897,22 @@
                         const bg = gradients[i % gradients.length];
                         
                         return `
-                        <div class="bg-white rounded-3xl shadow-card overflow-hidden relative border border-slate-50">
+                        <div class="bg-white rounded-3xl shadow-card overflow-hidden relative border border-slate-50 cursor-pointer active:scale-[0.98] transition-transform" onclick="App.editPlan('${p.id}')">
                             <div class="h-24 ${bg} p-4 flex items-end">
-                                <button onclick="App.deletePlan('${p.id}')" class="absolute top-4 right-4 w-8 h-8 bg-black/20 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-transform active:scale-90"><i class="ph-bold ph-trash"></i></button>
+                                <button onclick="event.stopPropagation(); App.deletePlan('${p.id}')" class="absolute top-4 right-4 w-8 h-8 bg-black/20 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-transform active:scale-90 z-10"><i class="ph-bold ph-trash"></i></button>
                                 <div class="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
                                     <i class="ph-fill ph-star text-2xl text-white"></i>
                                 </div>
                             </div>
-                            <div class="p-5 flex justify-between items-end">
-                                <div>
-                                    <h4 class="font-black text-lg text-app-text mb-1">${p.name}</h4>
+                            <div class="p-5 flex justify-between items-end gap-3">
+                                <div class="flex-1 min-w-0 pr-2">
+                                    <h4 class="font-black text-lg text-app-text mb-1 break-words">${p.name}</h4>
                                     <p class="text-[10px] font-bold text-app-muted uppercase tracking-widest">Goal: ${Utils.formatDate(p.date)}</p>
                                 </div>
-                                <div class="text-right">
+                                <div class="text-right shrink-0 flex flex-col items-end">
                                     <p class="font-black text-xl text-app-text tracking-tight mb-2">${Utils.formatMoney(p.amount)}</p>
-                                    <button onclick="App.markPlanBought('${p.id}')" class="bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wider px-4 py-2 rounded-full active:scale-95 transition-transform">
-                                        Mark Bought
+                                    <button onclick="event.stopPropagation(); App.markPlanBought('${p.id}')" class="relative z-10 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-widest w-24 py-2.5 rounded-full active:scale-95 transition-transform flex items-center justify-center gap-1.5 shrink-0">
+                                        <i class="ph-bold ph-check text-sm"></i> Bought
                                     </button>
                                 </div>
                             </div>
@@ -784,6 +927,95 @@
         // --- ANALYTICS RENDER ---
         renderAnalytics() {
             const stats = Utils.getStats();
+            
+            // Filters and Setup for Daily Spend
+            const filterLabels = {
+                'today': 'Today', 'yesterday': 'Yesterday', '7days': 'Last 7 Days',
+                '30days': 'Last 30 Days', '1month': 'This Month', '1year': 'Last 1 Year', 'custom': 'Custom Range'
+            };
+            const label = filterLabels[UI.analyticsFilter] || 'Last 7 Days';
+            let displayLabel = label;
+            if(UI.analyticsFilter === 'custom' && UI.analyticsStart && UI.analyticsEnd) {
+                displayLabel = `${Utils.formatDate(UI.analyticsStart)} - ${Utils.formatDate(UI.analyticsEnd)}`;
+            }
+
+            const todayStr = Utils.getToday();
+            const parseYMD = (ymd) => { const [y, m, d] = ymd.split('-'); return new Date(y, m - 1, d); };
+            const todayObj = parseYMD(todayStr);
+
+            // Filter logic
+            let filteredAnalytics = [...Store.data.expenses].filter(e => {
+                if (UI.analyticsFilter === 'today') return e.date === todayStr;
+                const eDate = parseYMD(e.date);
+                if (UI.analyticsFilter === 'yesterday') {
+                    const yest = new Date(todayObj); yest.setDate(yest.getDate() - 1);
+                    return eDate.getTime() === yest.getTime();
+                }
+                if (UI.analyticsFilter === '7days') {
+                    const past = new Date(todayObj); past.setDate(past.getDate() - 7);
+                    return eDate >= past && eDate <= todayObj;
+                }
+                if (UI.analyticsFilter === '30days') {
+                    const past = new Date(todayObj); past.setDate(past.getDate() - 30);
+                    return eDate >= past && eDate <= todayObj;
+                }
+                if (UI.analyticsFilter === '1month') {
+                    return eDate.getFullYear() === todayObj.getFullYear() && eDate.getMonth() === todayObj.getMonth();
+                }
+                if (UI.analyticsFilter === '1year') {
+                    const past = new Date(todayObj); past.setFullYear(past.getFullYear() - 1);
+                    return eDate >= past && eDate <= todayObj;
+                }
+                if (UI.analyticsFilter === 'custom') {
+                    const start = parseYMD(UI.analyticsStart); const end = parseYMD(UI.analyticsEnd);
+                    return eDate >= start && eDate <= end;
+                }
+                return true;
+            });
+
+            // Aggregate by Date
+            const dailyTotals = {};
+            filteredAnalytics.forEach(e => {
+                if(!dailyTotals[e.date]) dailyTotals[e.date] = 0;
+                dailyTotals[e.date] += parseFloat(e.amount);
+            });
+
+            const dailyArr = Object.keys(dailyTotals).map(date => ({ date, total: dailyTotals[date] }))
+                                   .sort((a,b) => new Date(b.date) - new Date(a.date));
+
+            // Generate Daily HTML with Month Grouping
+            let dailyHtml = '';
+            if(dailyArr.length === 0) {
+                dailyHtml = `<div class="text-center mt-8 text-slate-400"><p class="font-bold text-sm">No expenses in this period.</p></div>`;
+            } else {
+                let lastMonthStr = '';
+                dailyArr.forEach(day => {
+                    const dObj = parseYMD(day.date);
+                    const monthStr = dObj.toLocaleString('default', { month: 'long', year: 'numeric' });
+                    
+                    if(monthStr !== lastMonthStr) {
+                        dailyHtml += `<div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-6 mb-3 px-1 flex items-center gap-3"><div class="h-px bg-slate-200 flex-grow"></div>${monthStr}<div class="h-px bg-slate-200 flex-grow"></div></div>`;
+                        lastMonthStr = monthStr;
+                    }
+
+                    const dayName = dObj.toLocaleDateString('en-US', { weekday: 'short' });
+                    const dayNum = dObj.toLocaleDateString('en-US', { day: '2-digit' });
+                    
+                    dailyHtml += `
+                        <div class="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-50 mb-3 active:scale-95 transition-transform">
+                            <div class="flex items-center gap-4">
+                                <div class="w-11 h-11 bg-blue-50 text-blue-600 rounded-xl flex flex-col items-center justify-center font-black leading-tight border border-blue-100">
+                                    <span class="text-[9px] uppercase tracking-widest opacity-80">${dayName}</span>
+                                    <span class="text-sm">${dayNum}</span>
+                                </div>
+                                <span class="font-bold text-slate-700 text-sm">Total Spent</span>
+                            </div>
+                            <span class="font-black text-slate-800 tracking-tight text-[17px]">-${Utils.formatMoney(day.total)}</span>
+                        </div>
+                    `;
+                });
+            }
+
             const html = `
                 <div class="bg-white rounded-4xl p-6 shadow-card mb-6 border border-slate-50">
                     <h3 class="font-black text-lg mb-6 text-center tracking-tight text-app-text">Budget Utilization</h3>
@@ -804,6 +1036,16 @@
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Spent</p>
                         <p class="text-xl font-black text-blue-600">${Utils.formatMoney(stats.spentMonth)}</p>
                     </div>
+                </div>
+                
+                <div class="mt-8 mb-4 flex justify-between items-end px-1">
+                    <h3 class="font-black text-lg tracking-tight text-app-text">Daily Spends</h3>
+                    <button onclick="App.openFilterSheet('analytics')" class="bg-white border border-slate-200 text-blue-600 px-3 py-1.5 rounded-full text-[11px] font-bold flex items-center gap-1 active:scale-95 transition-transform shadow-sm">
+                        ${displayLabel} <i class="ph-bold ph-caret-down ml-1"></i>
+                    </button>
+                </div>
+                <div class="pb-10">
+                    ${dailyHtml}
                 </div>
             `;
             document.getElementById('view-analytics').innerHTML = html;
@@ -1001,7 +1243,8 @@
             const data = {
                 name: document.getElementById('exp-name').value,
                 amount: parseFloat(document.getElementById('exp-amount').value),
-                date: document.getElementById('exp-date').value
+                date: document.getElementById('exp-date').value,
+                note: document.getElementById('exp-note').value // New Note Field
             };
 
             if (idInput) {
@@ -1029,6 +1272,7 @@
             document.getElementById('exp-amount').value = exp.amount;
             document.getElementById('exp-name').value = exp.name;
             document.getElementById('exp-date').value = exp.date;
+            document.getElementById('exp-note').value = exp.note || ''; // Load Note
             UI.openSheet('expense-sheet');
         },
 
@@ -1043,18 +1287,39 @@
 
         savePlan(e) {
             e.preventDefault();
+            const idInput = document.getElementById('plan-id').value;
             const data = {
-                id: generateID(),
                 name: document.getElementById('plan-name').value,
                 amount: parseFloat(document.getElementById('plan-amount').value),
                 date: document.getElementById('plan-date').value,
+                note: document.getElementById('plan-note').value, // Saving Note
                 status: 'pending'
             };
-            Store.data.plans.push(data);
+
+            if (idInput) {
+                const idx = Store.data.plans.findIndex(x => x.id === idInput);
+                if(idx > -1) Store.data.plans[idx] = { ...Store.data.plans[idx], ...data };
+                UI.toast('Plan Updated');
+            } else {
+                data.id = generateID();
+                Store.data.plans.push(data);
+                UI.toast('Added to Purchase Planner');
+            }
             Store.save();
             UI.closeSheets();
-            UI.toast('Added to Purchase Planner');
             Router.navigate('planner');
+        },
+
+        editPlan(id) {
+            const p = Store.data.plans.find(x => x.id === id);
+            if(!p) return;
+            document.getElementById('plan-form').reset();
+            document.getElementById('plan-id').value = p.id;
+            document.getElementById('plan-name').value = p.name;
+            document.getElementById('plan-amount').value = p.amount;
+            document.getElementById('plan-date').value = p.date;
+            document.getElementById('plan-note').value = p.note || ''; // Loading Note
+            UI.openSheet('plan-sheet');
         },
 
         deletePlan(id) {
@@ -1071,12 +1336,81 @@
             if(p) {
                 UI.confirm('Mark as Purchased?', 'This will move the plan into your actual expenses using its target date.', 'Confirm Purchase', () => {
                     Store.data.plans = Store.data.plans.filter(x => x.id !== id);
-                    Store.data.expenses.push({ id: generateID(), name: p.name, amount: p.amount, date: p.date });
+                    // Transfer the note to expense as well!
+                    Store.data.expenses.push({ id: generateID(), name: p.name, amount: p.amount, date: p.date, note: p.note || '' });
                     Store.save();
                     UI.toast('Purchased! Added to expenses.');
                     Router.navigate('planner');
                 }, false);
             }
+        },
+
+        filterContext: 'tx', // 'tx' or 'analytics'
+
+        openFilterSheet(context = 'tx') {
+            this.filterContext = context;
+            const activeFilter = context === 'tx' ? UI.txFilter : UI.analyticsFilter;
+            
+            const filters = [
+                { id: 'today', label: 'Today' },
+                { id: 'yesterday', label: 'Yesterday' },
+                { id: '7days', label: 'Last 7 Days' },
+                { id: '30days', label: 'Last 30 Days' },
+                { id: '1month', label: 'This Month' },
+                { id: '1year', label: 'Last 1 Year' }
+            ];
+            
+            let html = filters.map(f => `
+                <button onclick="App.setFilter('${f.id}')" class="w-full text-left p-4 rounded-2xl font-bold transition-all flex justify-between items-center ${activeFilter === f.id ? 'text-blue-600 bg-blue-50 border border-blue-100' : 'text-slate-700 bg-white border border-slate-50 active:bg-slate-50'}">
+                    <span>${f.label}</span>
+                    ${activeFilter === f.id ? '<i class="ph-bold ph-check-circle text-xl text-blue-500"></i>' : ''}
+                </button>
+            `).join('');
+
+            html += `
+                <button onclick="App.setFilter('custom')" class="w-full text-left p-4 rounded-2xl font-bold transition-all flex justify-between items-center ${activeFilter === 'custom' ? 'text-blue-600 bg-blue-50 border border-blue-100' : 'text-slate-700 bg-white border border-slate-50 active:bg-slate-50'}">
+                    <span>Custom Range</span>
+                    <div class="flex items-center gap-2">
+                        ${activeFilter === 'custom' ? '<i class="ph-bold ph-check-circle text-xl text-blue-500"></i>' : ''}
+                        <i class="ph-bold ph-calendar-blank text-xl ${activeFilter === 'custom' ? 'text-blue-500' : 'text-slate-400'}"></i>
+                    </div>
+                </button>
+            `;
+
+            document.getElementById('filter-list-container').innerHTML = html;
+            UI.openSheet('tx-filter-sheet');
+        },
+
+        setFilter(filterType) {
+            if(filterType === 'custom') {
+                UI.closeSheets();
+                setTimeout(() => UI.openSheet('custom-date-sheet'), 300);
+                return;
+            }
+            if(this.filterContext === 'tx') {
+                UI.txFilter = filterType;
+                UI.renderTransactions();
+            } else {
+                UI.analyticsFilter = filterType;
+                UI.renderAnalytics();
+            }
+            UI.closeSheets();
+        },
+
+        applyCustomDateFilter() {
+            const start = document.getElementById('custom-start-date').value;
+            const end = document.getElementById('custom-end-date').value;
+            if(!start || !end) { UI.toast('Please select both dates', true); return; }
+            if(new Date(start) > new Date(end)) { UI.toast('Start date cannot be after end date', true); return; }
+            
+            if(this.filterContext === 'tx') {
+                UI.txStart = start; UI.txEnd = end; UI.txFilter = 'custom';
+                UI.renderTransactions();
+            } else {
+                UI.analyticsStart = start; UI.analyticsEnd = end; UI.analyticsFilter = 'custom';
+                UI.renderAnalytics();
+            }
+            UI.closeSheets();
         },
 
         updateSettings(key, value) {
